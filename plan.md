@@ -1,71 +1,65 @@
-# 業務フロー導線の実装計画
+# アセスメント画面 UIブラッシュアップ計画
 
 ## 概要
-各モジュール（体調入力・タスク・サンクス）を「一日の業務フロー」として繋ぎ、
-ロールに応じた遷移先の分岐を実装する。
+アセスメント画面（`/assessment`）の見た目を改善し、質問カードの視認性・操作性を向上させる。
 
 ---
 
-## 変更ファイル一覧（4ファイル）
+## 変更ファイル一覧（2ファイル）
 
-| # | ファイル | 操作 | 概要 |
-|---|---------|------|------|
-| 1 | `apps/web/src/features/auth/components/login-form.tsx` | 編集 | ログイン後の遷移先をロール別に分岐 |
-| 2 | `apps/web/src/features/health-check/components/health-check-page-content.tsx` | 編集 | 初回送信成功後に2秒で `/micro-tasks` へ自動遷移 |
-| 3 | `apps/web/src/features/micro-task/components/micro-task-card.tsx` | 編集 | 完了後にサンクスカード誘導メッセージ表示 |
-| 4 | `apps/web/src/components/hero-cta.tsx` | 編集 | ロール別の遷移先（dashboard or health-check） |
+| # | ファイル | 概要 |
+|---|---------|------|
+| 1 | `apps/web/src/features/assessment/components/assessment-form.tsx` | 質問カード・ボタンのデザイン改善 |
+| 2 | `apps/web/src/features/assessment/components/pentagon-chart.tsx` | チャートの視認性向上 |
 
 ---
 
-## 1. login-form.tsx — ロール別遷移
+## 1. assessment-form.tsx — 質問カード・ボタンのデザイン改善
 
-**現状**: `router.push('/micro-tasks')` 固定
-**変更後**:
-- `authStore.setUser(user)` の後、`user.role` をチェック
-- `ADMIN_ROLES` (R01, R02) / `JOB_COACH` (R03) → `/dashboard`
-- `MEMBER` (R04) 他 → `/health-check`
-- `@qlip/shared` の `Role`, `ADMIN_ROLES` 定数を使用
+### 1-1. 質問カード（fieldset要素）
+- **現状**: `p-4`, `border-gray-200`, `bg-white`
+- **変更**: パディングを `p-5` に拡大、`shadow-sm` 追加で立体感を付与
 
----
+### 1-2. 質問文（p要素）
+- **現状**: `text-sm font-medium`
+- **変更**: `text-base font-medium` に拡大して読みやすく
 
-## 2. health-check-page-content.tsx — 自動遷移
+### 1-3. 表情ボタン（button要素）
+- **現状**: `min-h-[56px]`, emoji `text-xl`
+- **変更**:
+  - ボタンサイズを `min-h-[64px]` に拡大
+  - emojiサイズを `text-2xl` に拡大
+  - ラベルテキストを `text-[10px]` に微増
 
-**現状**: 送信成功後にトーストのみ表示
-**変更後**:
-- `handleSubmitSuccess` で `result.isUpdate` が `false`（初回送信）の場合:
-  - トースト表示 + 「タスク一覧へ移動します...」メッセージ
-  - 2秒後に `router.push('/micro-tasks')` で自動遷移
-- `isUpdate` が `true`（更新）の場合: 現行通りトーストのみ
-
----
-
-## 3. micro-task-card.tsx — サンクス誘導
-
-**現状**: 完了ボタン押下 → showToast のみ
-**変更後**:
-- 完了成功後、カード内の完了ボタンの代わりに:
-  - 「お疲れ様でした！」メッセージ
-  - 「仲間にサンクスカードを送る →」のリンクボタン（`/thanks` へ）
-- `useState` で `isCompleted` フラグを管理
+### 1-4. 選択時のスタイル
+- **現状**: `border-[#ffc000] bg-[#ffc000]/10`
+- **変更**: `border-[#ffc000] bg-[#ffc000]/20` で選択状態をより鮮明に
 
 ---
 
-## 4. hero-cta.tsx — ロール別CTA
+## 2. pentagon-chart.tsx — チャートの視認性向上
 
-**現状**: ログイン済みなら `/micro-tasks` 固定
-**変更後**:
-- `authStore.getUser()` でロールを取得
-- `ADMIN_ROLES` / `JOB_COACH` → `/dashboard`（ボタンテキスト: 「ダッシュボードへ」）
-- `MEMBER` 他 → `/health-check`（ボタンテキスト: 「今日の体調を記録」）
-- `@qlip/shared` の `Role`, `ADMIN_ROLES` を使用
+### 2-1. グリッド線・軸線
+- **現状**: `stroke="#e5e7eb"` (gray-200相当)
+- **変更**: `stroke="#f3f4f6"` (gray-100相当) に薄くしてデータを際立たせる
+
+### 2-2. データポリゴン
+- **現状**: `fillOpacity="0.2"`
+- **変更**: `fillOpacity="0.35"` に上げてデータ領域を鮮やかに
+
+### 2-3. データポリゴンの枠線
+- **現状**: `strokeWidth="2"`
+- **変更**: `strokeWidth="2.5"` で少し太く、存在感を増す
+
+### 2-4. スコアドット
+- **現状**: `r="4"`
+- **変更**: `r="5"` で少し大きく
 
 ---
 
 ## 検証手順
 
-1. `npx pnpm build` — ビルド成功
-2. メンバー(R04)でログイン → `/health-check` へ遷移
-3. 体調入力送信 → 2秒後に `/micro-tasks` へ自動遷移
-4. タスク完了 → 「サンクスカードを送る」誘導が表示
-5. コーチ(R03)でログイン → `/dashboard` へ遷移
-6. トップページCTAがロール別で正しく動作
+1. `npx pnpm build` — ビルド成功確認
+2. `/assessment` にアクセスし質問フォームの見た目を確認
+3. ボタンの選択時にブランドカラーの背景が鮮明に表示されることを確認
+4. アセスメント送信後、五角形チャートのデータ部分がグリッドより際立っていることを確認

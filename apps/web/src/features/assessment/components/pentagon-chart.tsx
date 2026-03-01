@@ -44,13 +44,13 @@ export function PentagonChart({ scores }: PentagonChartProps) {
       const { x, y } = polarToXY(getVertexAngle(j), r);
       return `${x},${y}`;
     }).join(' ');
-    return <polygon key={level} points={points} fill="none" stroke="#e5e7eb" strokeWidth="1" />;
+    return <polygon key={level} points={points} fill="none" stroke="#f3f4f6" strokeWidth="1" />;
   });
 
   // Axis lines from center to each vertex
   const axisLines = Array.from({ length: 5 }, (_, i) => {
     const { x, y } = polarToXY(getVertexAngle(i), RADIUS);
-    return <line key={i} x1={CENTER} y1={CENTER} x2={x} y2={y} stroke="#e5e7eb" strokeWidth="1" />;
+    return <line key={i} x1={CENTER} y1={CENTER} x2={x} y2={y} stroke="#f3f4f6" strokeWidth="1" />;
   });
 
   // Data polygon
@@ -87,7 +87,7 @@ export function PentagonChart({ scores }: PentagonChartProps) {
 
   // Score dots
   const dots = dataPoints.map((p, i) => (
-    <circle key={i} cx={p.x} cy={p.y} r="4" fill="#ffc000" />
+    <circle key={i} cx={p.x} cy={p.y} r="5" fill="#ffc000" />
   ));
 
   return (
@@ -98,9 +98,9 @@ export function PentagonChart({ scores }: PentagonChartProps) {
         <polygon
           points={dataPolygon}
           fill="#ffc000"
-          fillOpacity="0.2"
+          fillOpacity="0.35"
           stroke="#ffc000"
-          strokeWidth="2"
+          strokeWidth="2.5"
         />
         {dots}
         {labelElements}

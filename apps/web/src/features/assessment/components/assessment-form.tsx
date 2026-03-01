@@ -157,10 +157,10 @@ export function AssessmentForm({
           {domain.questions.map((q, qIdx) => (
             <fieldset
               key={q.questionId}
-              className="rounded-xl border border-gray-200 bg-white p-4"
+              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
             >
               <legend className="sr-only">{q.questionText}</legend>
-              <p className="mb-3 text-sm font-medium text-gray-800">
+              <p className="mb-3 text-base font-medium text-gray-800">
                 <span className="mr-2 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-500">
                   {qIdx + 1}
                 </span>
@@ -181,17 +181,17 @@ export function AssessmentForm({
                       aria-checked={isSelected}
                       aria-label={`${opt.value}点: ${opt.label.replace('\n', '')}`}
                       onClick={() => handleScore(q.questionId, opt.value)}
-                      className={`flex min-h-[56px] flex-1 flex-col items-center justify-center rounded-lg border-2 px-1 py-2 transition-all ${
+                      className={`flex min-h-[64px] flex-1 flex-col items-center justify-center rounded-lg border-2 px-1 py-2 transition-all ${
                         isSelected
-                          ? 'border-[#ffc000] bg-[#ffc000]/10'
+                          ? 'border-[#ffc000] bg-[#ffc000]/20'
                           : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}
                     >
-                      <span className="text-xl" aria-hidden="true">
+                      <span className="text-2xl" aria-hidden="true">
                         {opt.emoji}
                       </span>
                       <span
-                        className={`mt-0.5 whitespace-pre-line text-center text-[9px] leading-tight ${
+                        className={`mt-0.5 whitespace-pre-line text-center text-[10px] leading-tight ${
                           isSelected ? 'text-gray-700' : 'text-gray-400'
                         }`}
                       >
