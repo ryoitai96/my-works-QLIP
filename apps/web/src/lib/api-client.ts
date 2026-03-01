@@ -45,5 +45,7 @@ export async function apiClient<T>(
     throw new ApiClientError(response.status, message);
   }
 
-  return response.json() as Promise<T>;
+  const text = await response.text();
+  if (!text) return null as T;
+  return JSON.parse(text) as T;
 }

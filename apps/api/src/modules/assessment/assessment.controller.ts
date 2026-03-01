@@ -1,7 +1,34 @@
-import { Controller } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import {
+  CurrentUser,
+  JwtPayload,
+} from '../../common/decorators/current-user.decorator';
 import { AssessmentService } from './assessment.service';
 
 @Controller('assessments')
+@UseGuards(JwtAuthGuard)
 export class AssessmentController {
   constructor(private readonly assessmentService: AssessmentService) {}
+
+  @Get('latest')
+  findLatest(@CurrentUser() user: JwtPayload) {
+    return this.assessmentService.findLatest(user.userId);
+  }
+
+  @Post()
+  submit(
+    @CurrentUser() user: JwtPayload,
+    @Body()
+    body: {
+      answers: Array<{
+        questionId: string;
+        domain: string;
+        questionText: string;
+        score: number;
+      }>;
+    },
+  ) {
+    return this.assessmentService.submit(user.userId, body);
+  }
 }
