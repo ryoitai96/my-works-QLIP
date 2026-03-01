@@ -1,2 +1,2 @@
-export { Role, ROLE_LABELS } from './roles';
+export { Role, ROLE_LABELS, ADMIN_ROLES } from './roles';
 export type { RoleId } from './roles';

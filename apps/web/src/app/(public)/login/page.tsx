@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { LoginForm } from '../../features/auth/components/login-form';
+import { LoginPageContent } from '../../../features/auth/components/login-page-content';
 
 export const metadata: Metadata = {
   title: 'ログイン | QLIP',
@@ -17,7 +17,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <LoginForm />
+        <LoginPageContent />
       </div>
     </main>
   );

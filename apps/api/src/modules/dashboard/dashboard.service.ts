@@ -1,0 +1,207 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../database/prisma.service';
+import { JwtPayload } from '../../common/decorators/current-user.decorator';
+import { Role } from '@qlip/shared';
+
+@Injectable()
+export class DashboardService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async getStats(user: JwtPayload) {
+    const isSuperAdmin = user.role === Role.SUPER_ADMIN;
+    const tenantId = user.tenantId;
+
+    // Site scope filter for R02
+    const siteFilter = isSuperAdmin ? {} : { siteId: user.siteId };
+    const memberWhere = { tenantId, ...siteFilter };
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Sunday
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [members, tasks, thanks, sites, healthCheck] = await Promise.all([
+      this.getMemberStats(memberWhere),
+      this.getTaskStats(memberWhere, todayStart, weekStart, monthStart),
+      this.getThanksStats(tenantId, isSuperAdmin, user.siteId, weekStart, monthStart),
+      this.getSiteStats(tenantId, isSuperAdmin, user.siteId),
+      this.getHealthCheckStats(memberWhere, todayStart, weekStart),
+    ]);
+
+    return { members, tasks, thanks, sites, healthCheck };
+  }
+
+  private async getMemberStats(memberWhere: Record<string, unknown>) {
+    const allMembers = await this.prisma.member.findMany({
+      where: memberWhere,
+      select: { status: true, siteId: true, site: { select: { id: true, name: true } } },
+    });
+
+    const total = allMembers.length;
+    const active = allMembers.filter((m) => m.status === 'active').length;
+    const onLeave = allMembers.filter((m) => m.status === 'on_leave').length;
+
+    const bySiteMap = new Map<string, { siteId: string; siteName: string; count: number }>();
+    for (const m of allMembers) {
+      const existing = bySiteMap.get(m.siteId);
+      if (existing) {
+        existing.count++;
+      } else {
+        bySiteMap.set(m.siteId, { siteId: m.siteId, siteName: m.site.name, count: 1 });
+      }
+    }
+
+    return { total, active, onLeave, bySite: Array.from(bySiteMap.values()) };
+  }
+
+  private async getTaskStats(
+    memberWhere: Record<string, unknown>,
+    todayStart: Date,
+    weekStart: Date,
+    monthStart: Date,
+  ) {
+    const memberIds = (
+      await this.prisma.member.findMany({
+        where: memberWhere,
+        select: { id: true },
+      })
+    ).map((m) => m.id);
+
+    if (memberIds.length === 0) {
+      return { totalCompletionsToday: 0, totalCompletionsThisWeek: 0, totalCompletionsThisMonth: 0, completionRate: 0 };
+    }
+
+    const assignmentWhere = { memberId: { in: memberIds } };
+
+    const [todayCount, weekCount, monthCount, totalAssigned, totalCompleted] = await Promise.all([
+      this.prisma.taskAssignment.count({
+        where: { ...assignmentWhere, status: 'completed', completedAt: { gte: todayStart } },
+      }),
+      this.prisma.taskAssignment.count({
+        where: { ...assignmentWhere, status: 'completed', completedAt: { gte: weekStart } },
+      }),
+      this.prisma.taskAssignment.count({
+        where: { ...assignmentWhere, status: 'completed', completedAt: { gte: monthStart } },
+      }),
+      this.prisma.taskAssignment.count({ where: assignmentWhere }),
+      this.prisma.taskAssignment.count({ where: { ...assignmentWhere, status: 'completed' } }),
+    ]);
+
+    const completionRate = totalAssigned > 0 ? Math.round((totalCompleted / totalAssigned) * 100) : 0;
+
+    return {
+      totalCompletionsToday: todayCount,
+      totalCompletionsThisWeek: weekCount,
+      totalCompletionsThisMonth: monthCount,
+      completionRate,
+    };
+  }
+
+  private async getThanksStats(
+    tenantId: string,
+    isSuperAdmin: boolean,
+    siteId: string | undefined,
+    weekStart: Date,
+    monthStart: Date,
+  ) {
+    // Filter thanks cards by users belonging to the tenant/site
+    const userWhere = isSuperAdmin
+      ? { tenantId }
+      : { tenantId, siteId };
+
+    const userIds = (
+      await this.prisma.user.findMany({ where: userWhere, select: { id: true } })
+    ).map((u) => u.id);
+
+    if (userIds.length === 0) {
+      return { totalThisMonth: 0, totalThisWeek: 0, topCategories: [] };
+    }
+
+    const thanksWhere = { fromUserId: { in: userIds } };
+
+    const [monthCount, weekCount, categoryGroups] = await Promise.all([
+      this.prisma.thanksCard.count({ where: { ...thanksWhere, createdAt: { gte: monthStart } } }),
+      this.prisma.thanksCard.count({ where: { ...thanksWhere, createdAt: { gte: weekStart } } }),
+      this.prisma.thanksCard.groupBy({
+        by: ['category'],
+        where: { ...thanksWhere, createdAt: { gte: monthStart } },
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 5,
+      }),
+    ]);
+
+    return {
+      totalThisMonth: monthCount,
+      totalThisWeek: weekCount,
+      topCategories: categoryGroups.map((g) => ({ category: g.category, count: g._count.id })),
+    };
+  }
+
+  private async getSiteStats(tenantId: string, isSuperAdmin: boolean, siteId?: string) {
+    const siteWhere = isSuperAdmin ? { tenantId } : { tenantId, id: siteId };
+
+    const allSites = await this.prisma.site.findMany({
+      where: siteWhere,
+      select: { siteType: true },
+    });
+
+    const bySiteTypeMap = new Map<string, number>();
+    for (const s of allSites) {
+      bySiteTypeMap.set(s.siteType, (bySiteTypeMap.get(s.siteType) ?? 0) + 1);
+    }
+
+    return {
+      total: allSites.length,
+      bySiteType: Array.from(bySiteTypeMap.entries()).map(([siteType, count]) => ({ siteType, count })),
+    };
+  }
+
+  private async getHealthCheckStats(
+    memberWhere: Record<string, unknown>,
+    todayStart: Date,
+    weekStart: Date,
+  ) {
+    const memberIds = (
+      await this.prisma.member.findMany({
+        where: memberWhere,
+        select: { id: true },
+      })
+    ).map((m) => m.id);
+
+    const activeMemberCount = (
+      await this.prisma.member.count({ where: { ...memberWhere, status: 'active' } })
+    );
+
+    if (memberIds.length === 0 || activeMemberCount === 0) {
+      return { todaySubmissions: 0, todayParticipationRate: 0, weeklyAvgParticipationRate: 0 };
+    }
+
+    const todaySubmissions = await this.prisma.vitalScore.count({
+      where: { memberId: { in: memberIds }, recordDate: todayStart },
+    });
+
+    const todayParticipationRate = Math.round((todaySubmissions / activeMemberCount) * 100);
+
+    // Weekly: count distinct days with submissions
+    const weeklyScores = await this.prisma.vitalScore.findMany({
+      where: { memberId: { in: memberIds }, recordDate: { gte: weekStart } },
+      select: { recordDate: true },
+    });
+
+    const daySubmissions = new Map<string, number>();
+    for (const vs of weeklyScores) {
+      const dayKey = vs.recordDate.toISOString().split('T')[0];
+      daySubmissions.set(dayKey, (daySubmissions.get(dayKey) ?? 0) + 1);
+    }
+
+    const daysInWeek = Math.max(1, daySubmissions.size);
+    const totalWeeklySubmissions = weeklyScores.length;
+    const weeklyAvgParticipationRate = Math.round(
+      (totalWeeklySubmissions / (daysInWeek * activeMemberCount)) * 100,
+    );
+
+    return { todaySubmissions, todayParticipationRate, weeklyAvgParticipationRate };
+  }
+}

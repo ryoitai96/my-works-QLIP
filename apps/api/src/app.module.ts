@@ -8,6 +8,8 @@ import { AssessmentModule } from './modules/assessment/assessment.module';
 import { HealthCheckModule } from './modules/health-check/health-check.module';
 import { ThanksModule } from './modules/thanks/thanks.module';
 import { ImportModule } from './modules/import/import.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { SettingsModule } from './modules/settings/settings.module';
 import { DatabaseModule } from './database/database.module';
 
 @Module({
@@ -22,6 +24,8 @@ import { DatabaseModule } from './database/database.module';
     HealthCheckModule,
     ThanksModule,
     ImportModule,
+    DashboardModule,
+    SettingsModule,
   ],
 })
 export class AppModule {}

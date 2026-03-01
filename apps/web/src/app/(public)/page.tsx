@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { HeroCta } from '../components/hero-cta';
+import { HeroCta } from '../../components/hero-cta';
 
 export const metadata: Metadata = {
   title: 'QLIP | HR-ESGプラットフォーム',

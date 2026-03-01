@@ -384,6 +384,224 @@ async function main() {
   }
   console.log(`  MicroTasks: ${microTasks.length} tasks upserted`);
 
+  // ===== 6. TaskAssignments =====
+  const TASK_ASSIGNMENT_IDS = [
+    '00000000-0000-4000-a000-000000002001',
+    '00000000-0000-4000-a000-000000002002',
+    '00000000-0000-4000-a000-000000002003',
+    '00000000-0000-4000-a000-000000002004',
+    '00000000-0000-4000-a000-000000002005',
+    '00000000-0000-4000-a000-000000002006',
+    '00000000-0000-4000-a000-000000002007',
+    '00000000-0000-4000-a000-000000002008',
+  ];
+
+  // Get micro task IDs
+  const flowerTasks = await prisma.microTask.findMany({
+    where: { siteId: SITE_FLOWER_LAB_ID },
+    select: { id: true, taskCode: true },
+    orderBy: { taskCode: 'asc' },
+  });
+  const satelliteTasks = await prisma.microTask.findMany({
+    where: { siteId: SITE_SATELLITE_ID },
+    select: { id: true, taskCode: true },
+    orderBy: { taskCode: 'asc' },
+  });
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const twoDaysAgo = new Date(today);
+  twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
+  const taskAssignments = [
+    // Member1 (Flower Lab) — today completed
+    {
+      id: TASK_ASSIGNMENT_IDS[0],
+      memberId: MEMBER1_ID,
+      microTaskId: flowerTasks[0]?.id,
+      assignedById: USER_COACH_ID,
+      assignedDate: today,
+      status: 'completed',
+      completedAt: new Date(),
+    },
+    {
+      id: TASK_ASSIGNMENT_IDS[1],
+      memberId: MEMBER1_ID,
+      microTaskId: flowerTasks[1]?.id,
+      assignedById: USER_COACH_ID,
+      assignedDate: today,
+      status: 'completed',
+      completedAt: new Date(),
+    },
+    {
+      id: TASK_ASSIGNMENT_IDS[2],
+      memberId: MEMBER1_ID,
+      microTaskId: flowerTasks[2]?.id,
+      assignedById: USER_COACH_ID,
+      assignedDate: today,
+      status: 'assigned',
+    },
+    // Member1 — yesterday completed
+    {
+      id: TASK_ASSIGNMENT_IDS[3],
+      memberId: MEMBER1_ID,
+      microTaskId: flowerTasks[3]?.id,
+      assignedById: USER_COACH_ID,
+      assignedDate: yesterday,
+      status: 'completed',
+      completedAt: yesterday,
+    },
+    // Member2 (Satellite) — today
+    {
+      id: TASK_ASSIGNMENT_IDS[4],
+      memberId: MEMBER2_ID,
+      microTaskId: satelliteTasks[0]?.id,
+      assignedById: USER_ADMIN_ID,
+      assignedDate: today,
+      status: 'completed',
+      completedAt: new Date(),
+    },
+    {
+      id: TASK_ASSIGNMENT_IDS[5],
+      memberId: MEMBER2_ID,
+      microTaskId: satelliteTasks[1]?.id,
+      assignedById: USER_ADMIN_ID,
+      assignedDate: today,
+      status: 'in_progress',
+      startedAt: new Date(),
+    },
+    // Member2 — two days ago
+    {
+      id: TASK_ASSIGNMENT_IDS[6],
+      memberId: MEMBER2_ID,
+      microTaskId: satelliteTasks[2]?.id,
+      assignedById: USER_ADMIN_ID,
+      assignedDate: twoDaysAgo,
+      status: 'completed',
+      completedAt: twoDaysAgo,
+    },
+    {
+      id: TASK_ASSIGNMENT_IDS[7],
+      memberId: MEMBER2_ID,
+      microTaskId: satelliteTasks[3]?.id,
+      assignedById: USER_ADMIN_ID,
+      assignedDate: twoDaysAgo,
+      status: 'completed',
+      completedAt: twoDaysAgo,
+    },
+  ];
+
+  for (const ta of taskAssignments) {
+    if (!ta.microTaskId) continue;
+    await prisma.taskAssignment.upsert({
+      where: { id: ta.id },
+      update: { status: ta.status, completedAt: ta.completedAt, startedAt: ta.startedAt },
+      create: {
+        id: ta.id,
+        memberId: ta.memberId,
+        microTaskId: ta.microTaskId,
+        assignedById: ta.assignedById,
+        assignedDate: ta.assignedDate,
+        status: ta.status,
+        startedAt: ta.startedAt,
+        completedAt: ta.completedAt,
+      },
+    });
+  }
+  console.log(`  TaskAssignments: ${taskAssignments.length} upserted`);
+
+  // ===== 7. ThanksCards =====
+  const THANKS_IDS = [
+    '00000000-0000-4000-a000-000000003001',
+    '00000000-0000-4000-a000-000000003002',
+    '00000000-0000-4000-a000-000000003003',
+    '00000000-0000-4000-a000-000000003004',
+    '00000000-0000-4000-a000-000000003005',
+  ];
+
+  const thanksCards = [
+    {
+      id: THANKS_IDS[0],
+      fromUserId: USER_COACH_ID,
+      toUserId: USER_MEMBER1_ID,
+      content: '今日も丁寧にお花の検品をしてくれてありがとう！',
+      category: 'great_job',
+    },
+    {
+      id: THANKS_IDS[1],
+      fromUserId: USER_MEMBER1_ID,
+      toUserId: USER_COACH_ID,
+      content: '優しく教えてくださりありがとうございます。',
+      category: 'kindness',
+    },
+    {
+      id: THANKS_IDS[2],
+      fromUserId: USER_ADMIN_ID,
+      toUserId: USER_MEMBER2_ID,
+      content: 'データ入力の正確さが素晴らしいです！',
+      category: 'great_job',
+    },
+    {
+      id: THANKS_IDS[3],
+      fromUserId: USER_MEMBER2_ID,
+      toUserId: USER_MEMBER1_ID,
+      content: '一緒にがんばれて嬉しいです。',
+      category: 'teamwork',
+    },
+    {
+      id: THANKS_IDS[4],
+      fromUserId: USER_COACH_ID,
+      toUserId: USER_MEMBER2_ID,
+      content: '新しいアレンジメントのアイデア、とても素敵でした！',
+      category: 'creativity',
+    },
+  ];
+
+  for (const tc of thanksCards) {
+    await prisma.thanksCard.upsert({
+      where: { id: tc.id },
+      update: { content: tc.content, category: tc.category },
+      create: tc,
+    });
+  }
+  console.log(`  ThanksCards: ${thanksCards.length} upserted`);
+
+  // ===== 8. VitalScores =====
+  const VITAL_IDS = [
+    '00000000-0000-4000-a000-000000004001',
+    '00000000-0000-4000-a000-000000004002',
+    '00000000-0000-4000-a000-000000004003',
+    '00000000-0000-4000-a000-000000004004',
+    '00000000-0000-4000-a000-000000004005',
+    '00000000-0000-4000-a000-000000004006',
+  ];
+
+  const vitalScores = [
+    // Member1 — today
+    { id: VITAL_IDS[0], memberId: MEMBER1_ID, recordDate: today, mood: 4, sleep: 3, condition: 4, streakDays: 3 },
+    // Member1 — yesterday
+    { id: VITAL_IDS[1], memberId: MEMBER1_ID, recordDate: yesterday, mood: 3, sleep: 4, condition: 3, streakDays: 2 },
+    // Member1 — two days ago
+    { id: VITAL_IDS[2], memberId: MEMBER1_ID, recordDate: twoDaysAgo, mood: 4, sleep: 4, condition: 4, streakDays: 1 },
+    // Member2 — today
+    { id: VITAL_IDS[3], memberId: MEMBER2_ID, recordDate: today, mood: 5, sleep: 5, condition: 4, streakDays: 2 },
+    // Member2 — yesterday
+    { id: VITAL_IDS[4], memberId: MEMBER2_ID, recordDate: yesterday, mood: 4, sleep: 4, condition: 5, streakDays: 1 },
+    // Member2 — two days ago
+    { id: VITAL_IDS[5], memberId: MEMBER2_ID, recordDate: twoDaysAgo, mood: 3, sleep: 3, condition: 3, streakDays: 0 },
+  ];
+
+  for (const vs of vitalScores) {
+    await prisma.vitalScore.upsert({
+      where: { memberId_recordDate: { memberId: vs.memberId, recordDate: vs.recordDate } },
+      update: { mood: vs.mood, sleep: vs.sleep, condition: vs.condition, streakDays: vs.streakDays },
+      create: vs,
+    });
+  }
+  console.log(`  VitalScores: ${vitalScores.length} upserted`);
+
   // ===== Summary =====
   const counts = {
     tenants: await prisma.tenant.count(),
@@ -391,13 +609,19 @@ async function main() {
     users: await prisma.user.count(),
     members: await prisma.member.count(),
     microTasks: await prisma.microTask.count(),
+    taskAssignments: await prisma.taskAssignment.count(),
+    thanksCards: await prisma.thanksCard.count(),
+    vitalScores: await prisma.vitalScore.count(),
   };
   console.log('\n📊 Seed summary:');
-  console.log(`  Tenants:    ${counts.tenants}`);
-  console.log(`  Sites:      ${counts.sites}`);
-  console.log(`  Users:      ${counts.users}`);
-  console.log(`  Members:    ${counts.members}`);
-  console.log(`  MicroTasks: ${counts.microTasks}`);
+  console.log(`  Tenants:         ${counts.tenants}`);
+  console.log(`  Sites:           ${counts.sites}`);
+  console.log(`  Users:           ${counts.users}`);
+  console.log(`  Members:         ${counts.members}`);
+  console.log(`  MicroTasks:      ${counts.microTasks}`);
+  console.log(`  TaskAssignments: ${counts.taskAssignments}`);
+  console.log(`  ThanksCards:     ${counts.thanksCards}`);
+  console.log(`  VitalScores:     ${counts.vitalScores}`);
   console.log('\n✅ Seeding completed successfully!');
 }
 

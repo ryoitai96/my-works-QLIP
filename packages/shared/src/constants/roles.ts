@@ -21,6 +21,9 @@ export const Role = {
 
 export type RoleId = (typeof Role)[keyof typeof Role];
 
+/** 管理者ロール（R01: スーパーアドミン, R02: 拠点マネージャー） */
+export const ADMIN_ROLES: RoleId[] = [Role.SUPER_ADMIN, Role.SITE_MANAGER];
+
 export const ROLE_LABELS: Record<RoleId, string> = {
   R01: 'QLIPスーパーアドミン',
   R02: '拠点マネージャー',
