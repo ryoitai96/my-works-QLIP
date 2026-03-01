@@ -32,7 +32,7 @@ export function HeroCta() {
     ? isStaff
       ? '/dashboard'
       : '/health-check'
-    : '/login';
+    : '/';
   const label = isAuthenticated
     ? isStaff
       ? 'ダッシュボードへ'
