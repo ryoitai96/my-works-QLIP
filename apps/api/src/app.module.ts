@@ -10,6 +10,7 @@ import { ThanksModule } from './modules/thanks/thanks.module';
 import { ImportModule } from './modules/import/import.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { DatabaseModule } from './database/database.module';
 
 @Module({
@@ -26,6 +27,7 @@ import { DatabaseModule } from './database/database.module';
     ImportModule,
     DashboardModule,
     SettingsModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
