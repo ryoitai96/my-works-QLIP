@@ -1,0 +1,14 @@
+{
+  "name": "@qlip/eslint-config",
+  "version": "0.0.1",
+  "private": true,
+  "files": ["base.js", "next.js", "nest.js"],
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint-config-prettier": "^10.0.0"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0"
+  }
+}
