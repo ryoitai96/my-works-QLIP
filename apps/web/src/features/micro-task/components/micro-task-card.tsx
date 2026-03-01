@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { ApiClientError } from '../../../lib/api-client';
 import { completeMicroTask } from '../api';
 import type { MicroTask } from '../api';
@@ -58,12 +59,14 @@ interface MicroTaskCardProps {
 
 export function MicroTaskCard({ task }: MicroTaskCardProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   async function handleComplete() {
     setIsSubmitting(true);
     try {
       await completeMicroTask(task.id);
       showToast(`「${task.name}」の完了を記録しました`, 'success');
+      setIsCompleted(true);
     } catch (err) {
       const message =
         err instanceof ApiClientError && err.statusCode === 403
@@ -139,15 +142,32 @@ export function MicroTaskCard({ task }: MicroTaskCardProps) {
       </div>
 
       <div className="border-t border-gray-200 px-5 py-3">
-        <button
-          type="button"
-          onClick={handleComplete}
-          disabled={isSubmitting}
-          aria-label={`${task.name} を完了として記録`}
-          className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isSubmitting ? '記録中...' : '完了'}
-        </button>
+        {isCompleted ? (
+          <div className="space-y-2 text-center">
+            <p className="text-sm font-medium text-green-700">
+              お疲れ様でした！
+            </p>
+            <Link
+              href="/thanks"
+              className="inline-flex items-center gap-1 rounded-lg bg-[#ffc000] px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-[#e6ad00]"
+            >
+              仲間にサンクスカードを送る
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            </Link>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleComplete}
+            disabled={isSubmitting}
+            aria-label={`${task.name} を完了として記録`}
+            className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSubmitting ? '記録中...' : '完了'}
+          </button>
+        )}
       </div>
     </article>
   );

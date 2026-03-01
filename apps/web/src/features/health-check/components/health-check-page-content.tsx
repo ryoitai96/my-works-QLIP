@@ -51,10 +51,16 @@ export function HealthCheckPageContent() {
   ) => {
     setInitialData(result);
     setStreakDays(result.streakDays);
-    setSuccessMessage(
-      result.isUpdate ? '体調を更新しました！' : '体調を記録しました！',
-    );
-    setTimeout(() => setSuccessMessage(''), 3000);
+
+    if (result.isUpdate) {
+      setSuccessMessage('体調を更新しました！');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else {
+      setSuccessMessage('体調を記録しました！ タスク一覧へ移動します...');
+      setTimeout(() => {
+        router.push('/micro-tasks');
+      }, 2000);
+    }
   };
 
   if (isLoading) {

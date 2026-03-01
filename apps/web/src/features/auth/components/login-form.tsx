@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 
+import { Role, ADMIN_ROLES, type RoleId } from '@qlip/shared';
 import { ApiClientError } from '../../../lib/api-client';
 import { login } from '../api';
 import { authStore } from '../auth-store';
@@ -30,7 +31,12 @@ export function LoginForm({ email, password, onEmailChange, onPasswordChange }: 
       const { accessToken, user } = await login({ email: email.trim(), password });
       authStore.setToken(accessToken);
       authStore.setUser(user);
-      router.push('/micro-tasks');
+
+      const role = user.role as RoleId;
+      const isStaff =
+        (ADMIN_ROLES as readonly string[]).includes(role) ||
+        role === Role.JOB_COACH;
+      router.push(isStaff ? '/dashboard' : '/health-check');
     } catch (err) {
       if (err instanceof ApiClientError && err.statusCode === 401) {
         setError('メールアドレスまたはパスワードが正しくありません。');
