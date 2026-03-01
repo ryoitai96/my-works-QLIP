@@ -43,8 +43,6 @@ model Site {
   members             Member[]
   users               User[]
   microTasks          MicroTask[]
-  thanksNotifications ThanksNotification[]
-
   @@map("sites")
 }
 
@@ -69,6 +67,8 @@ model User {
   taskAssignments   TaskAssignment[]        @relation("AssignedBy")
   assessmentResults AssessmentResult[]      @relation("ConductedBy")
   profileUpdates    CharacteristicProfile[] @relation("UpdatedBy")
+  sentThanks        ThanksCard[]            @relation("SentThanks")
+  receivedThanks    ThanksCard[]            @relation("ReceivedThanks")
 
   @@map("users")
 }
@@ -108,8 +108,6 @@ model Member {
   taskAssignments       TaskAssignment[]
   assessmentResults     AssessmentResult[]
   vitalScores           VitalScore[]
-  thanksNotifications   ThanksNotification[]
-
   @@map("members")
 }
 
@@ -288,26 +286,23 @@ model VitalScore {
   @@map("vital_scores")
 }
 
-// ===== モジュールD: サンクス通知 =====
+// ===== モジュールD: サンクスカード =====
 
-/// QRサンクス通知
-model ThanksNotification {
+/// ユーザー間の感謝カード
+model ThanksCard {
   id String @id @default(uuid())
 
-  qrToken String @unique /// QRコードに埋め込むユニークトークン
-  siteId  String
-  site    Site   @relation(fields: [siteId], references: [id])
+  fromUserId String
+  fromUser   User @relation("SentThanks", fields: [fromUserId], references: [id])
 
-  /// 制作担当メンバー（通知受取先）
-  memberId String?
-  member   Member? @relation(fields: [memberId], references: [id])
+  toUserId String
+  toUser   User @relation("ReceivedThanks", fields: [toUserId], references: [id])
 
-  /// ありがとうボタン押下情報
-  thankedAt DateTime? /// ボタン押下日時（null=未押下）
-  isRead    Boolean   @default(false) /// メンバーが通知を確認済みか
+  content  String /// 感謝メッセージ
+  category String /// "great_job" | "teamwork" | "creativity" | "kindness" | "other"
 
   createdAt DateTime @default(now())
 
-  @@index([memberId, thankedAt])
-  @@map("thanks_notifications")
+  @@index([toUserId, createdAt])
+  @@map("thanks_cards")
 }
