@@ -3,19 +3,311 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-/// ユーザーアカウント（全ロール共通）
-model User {
+// ===== テナント・拠点 =====
+
+/// 企業テナント
+model Tenant {
   id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  role      String   // R01-R07
-  siteId    String?
+  name      String /// 企業名
+  industry  String? /// 業種
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  sites      Site[]
+  users      User[]
+  members    Member[]
+  microTasks MicroTask[]
+
+  @@map("tenants")
+}
+
+/// 拠点（サテライトオフィス、フラワーラボ等）
+model Site {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  name      String
+  siteType  String /// "satellite_office" | "flower_lab" | "remote"
+  address   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members             Member[]
+  users               User[]
+  microTasks          MicroTask[]
+  thanksNotifications ThanksNotification[]
+
+  @@map("sites")
+}
+
+// ===== ユーザー・メンバー =====
+
+/// ユーザーアカウント（全ロール共通）
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String?
+  tenant       Tenant?  @relation(fields: [tenantId], references: [id])
+  siteId       String?
+  site         Site?    @relation(fields: [siteId], references: [id])
+  email        String   @unique
+  passwordHash String /// bcryptハッシュ化して格納
+  name         String
+  role         String /// "R01"-"R07"
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  member            Member?
+  taskAssignments   TaskAssignment[]        @relation("AssignedBy")
+  assessmentResults AssessmentResult[]      @relation("ConductedBy")
+  profileUpdates    CharacteristicProfile[] @relation("UpdatedBy")
+
   @@map("users")
+}
+
+/// 障害者雇用メンバー
+model Member {
+  id       String @id @default(uuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id])
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  siteId   String
+  site     Site   @relation(fields: [siteId], references: [id])
+
+  employeeNumber String? @unique /// 従業員番号
+
+  /// ※暗号化対象（L3）
+  dateOfBirth       DateTime? /// 生年月日
+  /// ※暗号化対象（L3）
+  disabilityType    String? /// "physical"|"intellectual"|"mental"|"developmental"|"multiple"
+  /// ※暗号化対象（L3）
+  disabilityGrade   String? /// 障害等級
+  handbookType      String? /// 手帳種類（身体障害者手帳/療育手帳/精神障害者保健福祉手帳）
+  handbookIssuedAt  DateTime? /// 手帳取得日
+  handbookExpiresAt DateTime? /// 手帳有効期限
+
+  workExperience     String? /// 就労経験
+  preferredWorkAreas String? /// 希望する業務領域
+  employmentType     String? /// "fixed_term" | "permanent"
+  enrolledAt         DateTime @default(now()) /// 入職日
+  status             String   @default("active") /// "active"|"inactive"|"on_leave"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  characteristicProfile CharacteristicProfile?
+  taskAssignments       TaskAssignment[]
+  assessmentResults     AssessmentResult[]
+  vitalScores           VitalScore[]
+  thanksNotifications   ThanksNotification[]
+
+  @@map("members")
+}
+
+// ===== モジュールA: 特性プロファイル・タスク =====
+
+/// 特性プロファイル（1メンバーにつき1件）
+model CharacteristicProfile {
+  id       String @id @default(uuid())
+  memberId String @unique
+  member   Member @relation(fields: [memberId], references: [id])
+
+  /// 特性アセスメント（5段階スコア: 1-5）※暗号化対象（L3）
+  visualCognition            Int? /// 視覚認知力
+  auditoryCognition          Int? /// 聴覚認知力
+  dexterity                  Int? /// 手先の器用さ
+  physicalEndurance          Int? /// 体力・持久力
+  repetitiveWorkTolerance    Int? /// 反復作業耐性
+  adaptability               Int? /// 変化対応力
+  interpersonalCommunication Int? /// 対人コミュニケーション
+  concentrationDuration      Int? /// 集中持続時間（目安分数）
+  stressTolerance            Int? /// ストレス耐性
+
+  /// ※暗号化対象（L4）— 感覚過敏、こだわり、得意パターン等
+  specialNotes String?
+
+  /// ※暗号化対象（L4）
+  clinicSchedule             String? /// 通院スケジュール
+  /// ※暗号化対象（L4）
+  medicationTiming           String? /// 服薬タイミング
+  /// ※暗号化対象（L4）
+  environmentAccommodation   String? /// 環境配慮（騒音、照明、温度等）
+  /// ※暗号化対象（L4）
+  communicationAccommodation String? /// コミュニケーション配慮
+
+  version     Int      @default(1) /// 更新バージョン
+  updatedById String?
+  updatedBy   User?    @relation("UpdatedBy", fields: [updatedById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("characteristic_profiles")
+}
+
+/// マイクロタスク定義
+model MicroTask {
+  id       String  @id @default(uuid())
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+  siteId   String?
+  site     Site?   @relation(fields: [siteId], references: [id])
+
+  taskCode          String   @unique /// "FL-001", "SO-001" 等
+  name              String /// タスク名
+  businessCategory  String /// "flower_lab"|"satellite_office"|"custom"
+  category          String? /// サブカテゴリ（下処理、制作、出荷、事務等）
+  requiredSkillTags String[] /// 要求スキルタグ（PostgreSQL配列型）
+  difficultyLevel   Int /// 難易度 1-5
+  standardDuration  Int? /// 標準所要時間（分）
+  physicalLoad      String? /// "low"|"medium"|"high"
+  cognitiveLoad     String? /// "low"|"medium"|"high"
+  description       String? /// 説明
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  taskAssignments TaskAssignment[]
+
+  @@map("micro_tasks")
+}
+
+/// タスクアサイン（手動アサイン → Phase 0）
+model TaskAssignment {
+  id           String    @id @default(uuid())
+  memberId     String
+  member       Member    @relation(fields: [memberId], references: [id])
+  microTaskId  String
+  microTask    MicroTask @relation(fields: [microTaskId], references: [id])
+  assignedById String
+  assignedBy   User      @relation("AssignedBy", fields: [assignedById], references: [id])
+
+  assignedDate DateTime /// 作業予定日
+  status       String    @default("assigned") /// "assigned"|"in_progress"|"completed"|"cancelled"
+  startedAt    DateTime?
+  completedAt  DateTime?
+  notes        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([memberId, assignedDate])
+  @@map("task_assignments")
+}
+
+// ===== モジュールB: アセスメント =====
+
+/// アセスメント結果（月次簡易評価 → Phase 0）
+model AssessmentResult {
+  id       String @id @default(uuid())
+  memberId String
+  member   Member @relation(fields: [memberId], references: [id])
+
+  assessmentType String /// Phase 0: "monthly_simple" のみ
+  assessmentDate DateTime /// 実施日
+  period         String /// 対象期間 "2026-03" 等
+  status         String   @default("draft") /// "draft"|"completed"
+
+  conductedById String?
+  conductedBy   User?   @relation("ConductedBy", fields: [conductedById], references: [id])
+
+  /// 五角形パラメータ（各領域の平均スコア）— 回答から算出・非正規化
+  d1Score Float? /// D1: 職務の遂行
+  d2Score Float? /// D2: 職業生活の遂行
+  d3Score Float? /// D3: 対人関係・感情コントロール
+  d4Score Float? /// D4: 日常生活の遂行
+  d5Score Float? /// D5: 疾病・障害の管理
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  answers AssessmentAnswer[]
+
+  @@index([memberId, period])
+  @@map("assessment_results")
+}
+
+/// アセスメント回答（設問ごとの回答）
+model AssessmentAnswer {
+  id                 String           @id @default(uuid())
+  assessmentResultId String
+  assessmentResult   AssessmentResult @relation(fields: [assessmentResultId], references: [id], onDelete: Cascade)
+
+  domain         String /// "D1"|"D2"|"D3"|"D4"|"D5"
+  questionId     String /// "D1-01", "D2-03" 等
+  questionText   String /// 設問テキスト（非正規化・監査証跡用）
+  evaluationType String @default("self") /// Phase 0: "self"。将来: "coach_without_support"|"coach_with_support"
+
+  score           Int? /// 1-5（null=未回答）
+  isNotApplicable Boolean @default(false) /// "?" 未経験・未確認
+  isStrength      Boolean @default(false) /// "★" ストレングスフラグ
+
+  createdAt DateTime @default(now())
+
+  @@unique([assessmentResultId, questionId, evaluationType])
+  @@map("assessment_answers")
+}
+
+// ===== モジュールC: 体調管理 =====
+
+/// 朝の体調入力（VitalScore）
+model VitalScore {
+  id       String @id @default(uuid())
+  memberId String
+  member   Member @relation(fields: [memberId], references: [id])
+
+  recordDate DateTime @db.Date /// 入力日（日付のみ）
+
+  /// ※暗号化対象（L3）
+  mood      Int /// 今日の気分 1-5（必須）
+  /// ※暗号化対象（L3）
+  sleep     Int /// 昨晩の睡眠 1-5（必須）
+  /// ※暗号化対象（L3）
+  condition Int /// 体調 1-5（必須）
+
+  /// ※暗号化対象（L4）
+  medicationTaken String? /// "taken"|"not_taken"|"not_applicable"（任意・同意ベース）
+
+  /// ※暗号化対象（L4）
+  note String? /// ひとこと自由入力（任意・音声入力対応）
+
+  streakDays Int @default(0) /// 連続入力日数（ゲーミフィケーション用）
+
+  createdAt DateTime @default(now())
+
+  @@unique([memberId, recordDate])
+  @@map("vital_scores")
+}
+
+// ===== モジュールD: サンクス通知 =====
+
+/// QRサンクス通知
+model ThanksNotification {
+  id String @id @default(uuid())
+
+  qrToken String @unique /// QRコードに埋め込むユニークトークン
+  siteId  String
+  site    Site   @relation(fields: [siteId], references: [id])
+
+  /// 制作担当メンバー（通知受取先）
+  memberId String?
+  member   Member? @relation(fields: [memberId], references: [id])
+
+  /// ありがとうボタン押下情報
+  thankedAt DateTime? /// ボタン押下日時（null=未押下）
+  isRead    Boolean   @default(false) /// メンバーが通知を確認済みか
+
+  createdAt DateTime @default(now())
+
+  @@index([memberId, thankedAt])
+  @@map("thanks_notifications")
 }

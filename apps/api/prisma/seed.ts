@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -16,12 +17,11 @@ const USER_MEMBER2_ID = '00000000-0000-4000-a000-000000000103';
 const MEMBER1_ID = '00000000-0000-4000-a000-000000001001';
 const MEMBER2_ID = '00000000-0000-4000-a000-000000001002';
 
-// ダミーパスワードハッシュ（開発用 — ログイン認証実装時に差し替え）
-const DUMMY_PASSWORD_HASH =
-  '$2b$10$dummyHashForDevelopmentOnlyDoNotUseInProduction000';
-
 async function main() {
   console.log('🌱 Seeding database...');
+
+  // 開発用共通パスワード — bcryptで実ハッシュ生成
+  const passwordHash = await bcrypt.hash('password123', 10);
 
   // ===== 1. Tenant =====
   const tenant = await prisma.tenant.upsert({
@@ -75,13 +75,13 @@ async function main() {
   // ===== 3. Users =====
   const userAdmin = await prisma.user.upsert({
     where: { email: 'admin@sann.co.jp' },
-    update: { name: '管理太郎', role: 'R01' },
+    update: { name: '管理太郎', role: 'R01', passwordHash },
     create: {
       id: USER_ADMIN_ID,
       tenantId: TENANT_ID,
       siteId: null,
       email: 'admin@sann.co.jp',
-      passwordHash: DUMMY_PASSWORD_HASH,
+      passwordHash: passwordHash,
       name: '管理太郎',
       role: 'R01',
       isActive: true,
@@ -90,13 +90,13 @@ async function main() {
 
   const userCoach = await prisma.user.upsert({
     where: { email: 'coach@sann.co.jp' },
-    update: { name: '指導花子', role: 'R03', siteId: SITE_FLOWER_LAB_ID },
+    update: { name: '指導花子', role: 'R03', siteId: SITE_FLOWER_LAB_ID, passwordHash },
     create: {
       id: USER_COACH_ID,
       tenantId: TENANT_ID,
       siteId: SITE_FLOWER_LAB_ID,
       email: 'coach@sann.co.jp',
-      passwordHash: DUMMY_PASSWORD_HASH,
+      passwordHash: passwordHash,
       name: '指導花子',
       role: 'R03',
       isActive: true,
@@ -105,13 +105,13 @@ async function main() {
 
   const userMember1 = await prisma.user.upsert({
     where: { email: 'member1@sann.co.jp' },
-    update: { name: '田中一郎', role: 'R04', siteId: SITE_FLOWER_LAB_ID },
+    update: { name: '田中一郎', role: 'R04', siteId: SITE_FLOWER_LAB_ID, passwordHash },
     create: {
       id: USER_MEMBER1_ID,
       tenantId: TENANT_ID,
       siteId: SITE_FLOWER_LAB_ID,
       email: 'member1@sann.co.jp',
-      passwordHash: DUMMY_PASSWORD_HASH,
+      passwordHash: passwordHash,
       name: '田中一郎',
       role: 'R04',
       isActive: true,
@@ -120,13 +120,13 @@ async function main() {
 
   const userMember2 = await prisma.user.upsert({
     where: { email: 'member2@sann.co.jp' },
-    update: { name: '鈴木次郎', role: 'R04', siteId: SITE_SATELLITE_ID },
+    update: { name: '鈴木次郎', role: 'R04', siteId: SITE_SATELLITE_ID, passwordHash },
     create: {
       id: USER_MEMBER2_ID,
       tenantId: TENANT_ID,
       siteId: SITE_SATELLITE_ID,
       email: 'member2@sann.co.jp',
-      passwordHash: DUMMY_PASSWORD_HASH,
+      passwordHash: passwordHash,
       name: '鈴木次郎',
       role: 'R04',
       isActive: true,

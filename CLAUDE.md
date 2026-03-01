@@ -24,13 +24,18 @@
 project-QLIP/
 ├── apps/
 │   ├── web/                    # Next.js フロントエンド (port 3000)
-│   │   └── src/app/            # App Router
+│   │   ├── src/app/            # App Router
+│   │   ├── src/components/     # UIコンポーネント
+│   │   ├── src/lib/            # ユーティリティ、APIクライアント
+│   │   └── src/hooks/          # カスタムフック
 │   └── api/                    # NestJS バックエンドAPI (port 3001)
 │       ├── src/modules/        # auth, member, task, assessment, health-check, thanks, import
+│       ├── src/common/         # Guards, Decorators, Filters
+│       ├── src/config/         # 設定管理
 │       ├── src/database/       # Prisma Service
 │       └── prisma/schema.prisma
 ├── packages/
-│   ├── shared/                 # @qlip/shared — 共有型定義・定数・バリデーション
+│   ├── shared/                 # @qlip/shared — 共有型定義・定数・Zodバリデーション
 │   ├── eslint-config/          # @qlip/eslint-config
 │   └── typescript-config/      # @qlip/typescript-config
 ├── docs/SYSTEM_REQUIREMENTS.md
