@@ -11,11 +11,11 @@ interface PentagonChartProps {
 }
 
 const LABELS = [
-  { key: 'd1' as const, label: 'D1: 職務の遂行' },
-  { key: 'd2' as const, label: 'D2: 職業生活' },
+  { key: 'd1' as const, label: 'D1: 職務遂行' },
+  { key: 'd2' as const, label: 'D2: 労働習慣' },
   { key: 'd3' as const, label: 'D3: 対人関係' },
-  { key: 'd4' as const, label: 'D4: 日常生活' },
-  { key: 'd5' as const, label: 'D5: 疾病管理' },
+  { key: 'd4' as const, label: 'D4: 感情制御' },
+  { key: 'd5' as const, label: 'D5: 自己管理' },
 ];
 
 const CENTER = 150;

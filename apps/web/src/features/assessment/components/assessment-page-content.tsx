@@ -160,11 +160,11 @@ export function AssessmentPageContent() {
           {/* Domain scores */}
           <div className="grid gap-3">
             {[
-              { key: 'd1Score' as const, label: 'D1: 職務の遂行' },
-              { key: 'd2Score' as const, label: 'D2: 職業生活の遂行' },
-              { key: 'd3Score' as const, label: 'D3: 対人関係・感情コントロール' },
-              { key: 'd4Score' as const, label: 'D4: 日常生活の遂行' },
-              { key: 'd5Score' as const, label: 'D5: 疾病・障害の管理' },
+              { key: 'd1Score' as const, label: 'D1: 職務遂行・認知処理能力' },
+              { key: 'd2Score' as const, label: 'D2: 基本的労働習慣・身体的耐性' },
+              { key: 'd3Score' as const, label: 'D3: 対人関係・コミュニケーション' },
+              { key: 'd4Score' as const, label: 'D4: 感情・ストレスコントロール' },
+              { key: 'd5Score' as const, label: 'D5: 障害理解・自己管理' },
             ].map(({ key, label }) => {
               const score = latestData[key];
               return (

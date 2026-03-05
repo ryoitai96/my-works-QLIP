@@ -149,7 +149,7 @@ export function MicroTaskCard({ task }: MicroTaskCardProps) {
             </p>
             <Link
               href="/thanks"
-              className="inline-flex items-center gap-1 rounded-lg bg-[#ffc000] px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-[#e6ad00]"
+              className="inline-flex items-center gap-1 rounded-lg bg-[#0077c7] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#005fa3]"
             >
               仲間にサンクスカードを送る
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -163,7 +163,7 @@ export function MicroTaskCard({ task }: MicroTaskCardProps) {
             onClick={handleComplete}
             disabled={isSubmitting}
             aria-label={`${task.name} を完了として記録`}
-            className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-lg bg-[#0077c7] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#005fa3] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? '記録中...' : '完了'}
           </button>

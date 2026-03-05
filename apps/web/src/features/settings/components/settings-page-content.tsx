@@ -1,14 +1,14 @@
 'use client';
 
 import { authStore } from '../../auth/auth-store';
-import { isAdminRole, isSuperAdmin } from '../../auth/role-check';
+import { isStaffRole, isSuperAdmin } from '../../auth/role-check';
 import { AccountSettingsSection } from './account-settings-section';
 import { SiteSettingsSection } from './site-settings-section';
 import { TenantSettingsSection } from './tenant-settings-section';
 
 export function SettingsPageContent() {
   const user = authStore.getUser();
-  const hasPermission = user?.role && isAdminRole(user.role);
+  const hasPermission = user?.role && isStaffRole(user.role);
   const showTenant = user?.role ? isSuperAdmin(user.role) : false;
 
   if (!hasPermission) {

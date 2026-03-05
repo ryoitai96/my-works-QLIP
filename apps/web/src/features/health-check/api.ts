@@ -5,6 +5,11 @@ export interface HealthCheckData {
   mood: number;
   sleep: number;
   condition: number;
+  bodyTemperature: number | null;
+  sleepHours: number | null;
+  mealBreakfast: boolean | null;
+  mealLunch: boolean | null;
+  mealDinner: boolean | null;
   note: string | null;
   streakDays: number;
   recordDate: string;
@@ -15,6 +20,11 @@ export interface SubmitHealthCheckRequest {
   mood: number;
   sleep: number;
   condition: number;
+  bodyTemperature?: number;
+  sleepHours?: number;
+  mealBreakfast?: boolean;
+  mealLunch?: boolean;
+  mealDinner?: boolean;
   note?: string;
 }
 

@@ -62,7 +62,7 @@ export function MicroTaskList() {
         <button
           type="button"
           onClick={loadTasks}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="rounded-lg bg-[#ffc000] px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-[#e6ad00] focus:outline-none focus:ring-2 focus:ring-[#ffc000]/40 focus:ring-offset-2"
         >
           再読み込み
         </button>
