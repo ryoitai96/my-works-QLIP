@@ -9,6 +9,11 @@ interface SubmitHealthCheckDto {
   mood: number;
   sleep: number;
   condition: number;
+  bodyTemperature?: number;
+  sleepHours?: number;
+  mealBreakfast?: boolean;
+  mealLunch?: boolean;
+  mealDinner?: boolean;
   note?: string;
 }
 
@@ -31,6 +36,24 @@ export class HealthCheckService {
           `${field} must be an integer between 1 and 5`,
         );
       }
+    }
+
+    if (
+      dto.bodyTemperature != null &&
+      (dto.bodyTemperature < 35.0 || dto.bodyTemperature > 42.0)
+    ) {
+      throw new BadRequestException(
+        'bodyTemperature must be between 35.0 and 42.0',
+      );
+    }
+
+    if (
+      dto.sleepHours != null &&
+      (dto.sleepHours < 0 || dto.sleepHours > 12)
+    ) {
+      throw new BadRequestException(
+        'sleepHours must be between 0 and 12',
+      );
     }
 
     const today = new Date();
@@ -76,6 +99,11 @@ export class HealthCheckService {
         mood: dto.mood,
         sleep: dto.sleep,
         condition: dto.condition,
+        bodyTemperature: dto.bodyTemperature ?? null,
+        sleepHours: dto.sleepHours ?? null,
+        mealBreakfast: dto.mealBreakfast ?? null,
+        mealLunch: dto.mealLunch ?? null,
+        mealDinner: dto.mealDinner ?? null,
         note: dto.note ?? null,
         streakDays,
       },
@@ -83,6 +111,11 @@ export class HealthCheckService {
         mood: dto.mood,
         sleep: dto.sleep,
         condition: dto.condition,
+        bodyTemperature: dto.bodyTemperature ?? null,
+        sleepHours: dto.sleepHours ?? null,
+        mealBreakfast: dto.mealBreakfast ?? null,
+        mealLunch: dto.mealLunch ?? null,
+        mealDinner: dto.mealDinner ?? null,
         note: dto.note ?? null,
       },
     });

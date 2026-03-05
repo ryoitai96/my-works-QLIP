@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { TenantServiceGuard } from '../../common/guards/tenant-service.guard';
+import { RequireService } from '../../common/decorators/require-service.decorator';
 import {
   CurrentUser,
   JwtPayload,
@@ -7,7 +9,8 @@ import {
 import { ThanksService } from './thanks.service';
 
 @Controller('thanks')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, TenantServiceGuard)
+@RequireService('thanks')
 export class ThanksController {
   constructor(private readonly thanksService: ThanksService) {}
 

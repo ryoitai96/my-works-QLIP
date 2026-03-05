@@ -2,7 +2,7 @@ import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/com
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../database/prisma.service';
 import { JwtPayload } from '../../common/decorators/current-user.decorator';
-import { Role } from '@qlip/shared';
+import { Role, STAFF_ROLES, DEFAULT_TENANT_SERVICES } from '@qlip/shared';
 
 @Injectable()
 export class SettingsService {
@@ -80,6 +80,44 @@ export class SettingsService {
       data,
       select: { id: true, name: true, siteType: true, address: true, isActive: true },
     });
+  }
+
+  async getTenantServices(user: JwtPayload) {
+    // MW staff (R01/R02) — always all enabled
+    if ((STAFF_ROLES as readonly string[]).includes(user.role)) {
+      return { ...DEFAULT_TENANT_SERVICES };
+    }
+
+    if (!user.tenantId) {
+      return { ...DEFAULT_TENANT_SERVICES };
+    }
+
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: user.tenantId },
+      select: {
+        svcAttendance: true,
+        svcHealthCheck: true,
+        svcAssessment: true,
+        svcMicroTask: true,
+        svcMessage: true,
+        svcThanks: true,
+        svcFlowerOrder: true,
+      },
+    });
+
+    if (!tenant) {
+      return { ...DEFAULT_TENANT_SERVICES };
+    }
+
+    return {
+      attendance: tenant.svcAttendance,
+      health_check: tenant.svcHealthCheck,
+      assessment: tenant.svcAssessment,
+      micro_task: tenant.svcMicroTask,
+      message: tenant.svcMessage,
+      thanks: tenant.svcThanks,
+      flower_order: tenant.svcFlowerOrder,
+    };
   }
 
   async getTenant(user: JwtPayload) {

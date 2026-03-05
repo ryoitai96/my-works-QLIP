@@ -8,11 +8,11 @@ export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getStats(user: JwtPayload) {
-    const isSuperAdmin = user.role === Role.SUPER_ADMIN;
+    const isTenantWide = user.role === Role.SUPER_ADMIN || user.role === Role.CLIENT_HR;
     const tenantId = user.tenantId;
 
-    // Site scope filter for R02
-    const siteFilter = isSuperAdmin ? {} : { siteId: user.siteId };
+    // SUPER_ADMIN and CLIENT_HR see the whole tenant; JOB_COACH sees only their site
+    const siteFilter = isTenantWide ? {} : { siteId: user.siteId };
     const memberWhere = { tenantId, ...siteFilter };
 
     const now = new Date();
@@ -24,8 +24,8 @@ export class DashboardService {
     const [members, tasks, thanks, sites, healthCheck] = await Promise.all([
       this.getMemberStats(memberWhere),
       this.getTaskStats(memberWhere, todayStart, weekStart, monthStart),
-      this.getThanksStats(tenantId, isSuperAdmin, user.siteId, weekStart, monthStart),
-      this.getSiteStats(tenantId, isSuperAdmin, user.siteId),
+      this.getThanksStats(tenantId, isTenantWide, user.siteId, weekStart, monthStart),
+      this.getSiteStats(tenantId, isTenantWide, user.siteId),
       this.getHealthCheckStats(memberWhere, todayStart, weekStart),
     ]);
 
@@ -100,13 +100,13 @@ export class DashboardService {
 
   private async getThanksStats(
     tenantId: string,
-    isSuperAdmin: boolean,
+    isTenantWide: boolean,
     siteId: string | undefined,
     weekStart: Date,
     monthStart: Date,
   ) {
     // Filter thanks cards by users belonging to the tenant/site
-    const userWhere = isSuperAdmin
+    const userWhere = isTenantWide
       ? { tenantId }
       : { tenantId, siteId };
 
@@ -139,8 +139,8 @@ export class DashboardService {
     };
   }
 
-  private async getSiteStats(tenantId: string, isSuperAdmin: boolean, siteId?: string) {
-    const siteWhere = isSuperAdmin ? { tenantId } : { tenantId, id: siteId };
+  private async getSiteStats(tenantId: string, isTenantWide: boolean, siteId?: string) {
+    const siteWhere = isTenantWide ? { tenantId } : { tenantId, id: siteId };
 
     const allSites = await this.prisma.site.findMany({
       where: siteWhere,
@@ -156,6 +156,63 @@ export class DashboardService {
       total: allSites.length,
       bySiteType: Array.from(bySiteTypeMap.entries()).map(([siteType, count]) => ({ siteType, count })),
     };
+  }
+
+  async getMemberDashboardStats(user: JwtPayload) {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Sunday
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [production, thanks] = await Promise.all([
+      this.getProductionStats(todayStart, weekStart, monthStart),
+      this.getReceivedThanksStats(user.userId, monthStart),
+    ]);
+
+    return { production, thanks };
+  }
+
+  private async getProductionStats(
+    todayStart: Date,
+    weekStart: Date,
+    monthStart: Date,
+  ) {
+    const [deliveredTotal, deliveredToday, deliveredThisWeek, deliveredThisMonth, inProgressCount, waitingCount, pendingCount] =
+      await Promise.all([
+        this.prisma.flowerOrder.count({ where: { status: 'delivered' } }),
+        this.prisma.flowerOrder.count({
+          where: { status: 'delivered', updatedAt: { gte: todayStart } },
+        }),
+        this.prisma.flowerOrder.count({
+          where: { status: 'delivered', updatedAt: { gte: weekStart } },
+        }),
+        this.prisma.flowerOrder.count({
+          where: { status: 'delivered', updatedAt: { gte: monthStart } },
+        }),
+        this.prisma.flowerOrder.count({ where: { status: 'in_production' } }),
+        this.prisma.flowerOrder.count({ where: { status: 'confirmed' } }),
+        this.prisma.flowerOrder.count({ where: { status: 'pending' } }),
+      ]);
+
+    return { deliveredTotal, deliveredToday, deliveredThisWeek, deliveredThisMonth, inProgressCount, waitingCount, pendingCount };
+  }
+
+  private async getReceivedThanksStats(userId: string, monthStart: Date) {
+    const [receivedTotal, receivedThisMonth, recentCards] = await Promise.all([
+      this.prisma.thanksCard.count({ where: { toUserId: userId } }),
+      this.prisma.thanksCard.count({
+        where: { toUserId: userId, createdAt: { gte: monthStart } },
+      }),
+      this.prisma.thanksCard.findMany({
+        where: { toUserId: userId },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        include: { fromUser: { select: { id: true, name: true } } },
+      }),
+    ]);
+
+    return { receivedTotal, receivedThisMonth, recentCards };
   }
 
   private async getHealthCheckStats(

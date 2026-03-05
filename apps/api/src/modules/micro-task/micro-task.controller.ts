@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { TenantServiceGuard } from '../../common/guards/tenant-service.guard';
+import { RequireService } from '../../common/decorators/require-service.decorator';
 import {
   CurrentUser,
   JwtPayload,
@@ -7,7 +9,8 @@ import {
 import { MicroTaskService } from './micro-task.service';
 
 @Controller('micro-tasks')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, TenantServiceGuard)
+@RequireService('micro_task')
 export class MicroTaskController {
   constructor(private readonly microTaskService: MicroTaskService) {}
 

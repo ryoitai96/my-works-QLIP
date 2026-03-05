@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { AuthModule } from './modules/auth/auth.module';
 import { MemberModule } from './modules/member/member.module';
 import { TaskModule } from './modules/task/task.module';
@@ -11,11 +13,20 @@ import { ImportModule } from './modules/import/import.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { ClientSettingsModule } from './modules/client-settings/client-settings.module';
+import { ProductModule } from './modules/product/product.module';
+import { OrderModule } from './modules/order/order.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
+import { MessageModule } from './modules/message/message.module';
 import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
+    }),
     DatabaseModule,
     AuthModule,
     MemberModule,
@@ -28,6 +39,11 @@ import { DatabaseModule } from './database/database.module';
     DashboardModule,
     SettingsModule,
     AdminModule,
+    ClientSettingsModule,
+    ProductModule,
+    OrderModule,
+    AttendanceModule,
+    MessageModule,
   ],
 })
 export class AppModule {}

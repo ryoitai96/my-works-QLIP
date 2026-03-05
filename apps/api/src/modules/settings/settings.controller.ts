@@ -3,12 +3,12 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, JwtPayload } from '../../common/decorators/current-user.decorator';
-import { ADMIN_ROLES } from '@qlip/shared';
+import { STAFF_ROLES, Role } from '@qlip/shared';
 import { SettingsService } from './settings.service';
 
 @Controller('settings')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(...ADMIN_ROLES)
+@Roles(...STAFF_ROLES)
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
@@ -47,5 +47,11 @@ export class SettingsController {
   @Get('tenant')
   async getTenant(@CurrentUser() user: JwtPayload) {
     return this.settingsService.getTenant(user);
+  }
+
+  @Get('tenant-services')
+  @Roles(Role.SUPER_ADMIN, Role.JOB_COACH, Role.MEMBER, Role.CLIENT_HR, Role.CLIENT_EMPLOYEE)
+  async getTenantServices(@CurrentUser() user: JwtPayload) {
+    return this.settingsService.getTenantServices(user);
   }
 }

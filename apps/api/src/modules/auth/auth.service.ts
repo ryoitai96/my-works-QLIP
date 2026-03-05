@@ -11,7 +11,10 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: { tenant: { select: { name: true } } },
+    });
 
     if (!user || !user.isActive) {
       return null;
@@ -25,7 +28,15 @@ export class AuthService {
     return user;
   }
 
-  async login(user: { id: string; email: string; role: string; tenantId: string | null; siteId: string | null; name: string }) {
+  async login(user: {
+    id: string;
+    email: string;
+    role: string;
+    tenantId: string | null;
+    siteId: string | null;
+    name: string;
+    tenant?: { name: string } | null;
+  }) {
     const payload = {
       sub: user.id,
       email: user.email,
@@ -34,9 +45,25 @@ export class AuthService {
       siteId: user.siteId,
     };
 
+    let avatarId: string | null = null;
+    if (user.role === 'R03') {
+      const member = await this.prisma.member.findUnique({
+        where: { userId: user.id },
+        select: { avatarId: true },
+      });
+      avatarId = member?.avatarId ?? null;
+    }
+
     return {
       accessToken: this.jwtService.sign(payload),
-      user: { name: user.name, role: user.role, email: user.email },
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        email: user.email,
+        tenantName: user.tenant?.name ?? null,
+        avatarId,
+      },
     };
   }
 }

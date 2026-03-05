@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { TenantServiceGuard } from '../../common/guards/tenant-service.guard';
+import { RequireService } from '../../common/decorators/require-service.decorator';
 import {
   CurrentUser,
   JwtPayload,
@@ -7,7 +9,8 @@ import {
 import { HealthCheckService } from './health-check.service';
 
 @Controller('health-checks')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, TenantServiceGuard)
+@RequireService('health_check')
 export class HealthCheckController {
   constructor(private readonly healthCheckService: HealthCheckService) {}
 
@@ -19,7 +22,18 @@ export class HealthCheckController {
   @Post()
   submit(
     @CurrentUser() user: JwtPayload,
-    @Body() body: { mood: number; sleep: number; condition: number; note?: string },
+    @Body()
+    body: {
+      mood: number;
+      sleep: number;
+      condition: number;
+      bodyTemperature?: number;
+      sleepHours?: number;
+      mealBreakfast?: boolean;
+      mealLunch?: boolean;
+      mealDinner?: boolean;
+      note?: string;
+    },
   ) {
     return this.healthCheckService.submitOrUpdate(user.userId, body);
   }
