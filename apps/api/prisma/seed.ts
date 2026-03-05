@@ -5,14 +5,24 @@ const prisma = new PrismaClient();
 
 // ===== 固定UUID =====
 const TENANT_ID = '00000000-0000-4000-a000-000000000001';
+const TENANT_B_ID = '00000000-0000-4000-a000-000000000002';
+const TENANT_C_ID = '00000000-0000-4000-a000-000000000003';
 
 const SITE_FLOWER_LAB_ID = '00000000-0000-4000-a000-000000000010';
 const SITE_SATELLITE_ID = '00000000-0000-4000-a000-000000000011';
+const SITE_B_YOKOHAMA_ID = '00000000-0000-4000-a000-000000000012';
+const SITE_C_OSAKA_ID = '00000000-0000-4000-a000-000000000013';
 
 const USER_ADMIN_ID = '00000000-0000-4000-a000-000000000100';
 const USER_COACH_ID = '00000000-0000-4000-a000-000000000101';
 const USER_MEMBER1_ID = '00000000-0000-4000-a000-000000000102';
 const USER_MEMBER2_ID = '00000000-0000-4000-a000-000000000103';
+const USER_CLIENT_HR_ID = '00000000-0000-4000-a000-000000000104';
+const USER_CLIENT_EMP_ID = '00000000-0000-4000-a000-000000000105';
+const USER_B_HR_ID = '00000000-0000-4000-a000-000000000106';
+const USER_B_EMP_ID = '00000000-0000-4000-a000-000000000107';
+const USER_C_HR_ID = '00000000-0000-4000-a000-000000000108';
+const USER_C_EMP_ID = '00000000-0000-4000-a000-000000000109';
 
 const MEMBER1_ID = '00000000-0000-4000-a000-000000001001';
 const MEMBER2_ID = '00000000-0000-4000-a000-000000001002';
@@ -26,15 +36,58 @@ async function main() {
   // ===== 1. Tenant =====
   const tenant = await prisma.tenant.upsert({
     where: { id: TENANT_ID },
-    update: { name: '株式会社SANN', industry: '人材サービス' },
+    update: { name: '株式会社A', industry: '人材サービス', tenantCode: 'T-001' },
     create: {
       id: TENANT_ID,
-      name: '株式会社SANN',
+      tenantCode: 'T-001',
+      name: '株式会社A',
       industry: '人材サービス',
       isActive: true,
     },
   });
-  console.log(`  Tenant: ${tenant.name}`);
+  // 株式会社B: フラワーギフトとサンクスカードをOFF
+  const tenantB = await prisma.tenant.upsert({
+    where: { id: TENANT_B_ID },
+    update: {
+      name: '株式会社B',
+      industry: '製造業',
+      tenantCode: 'T-002',
+      svcFlowerOrder: false,
+      svcThanks: false,
+    },
+    create: {
+      id: TENANT_B_ID,
+      tenantCode: 'T-002',
+      name: '株式会社B',
+      industry: '製造業',
+      isActive: true,
+      svcFlowerOrder: false,
+      svcThanks: false,
+    },
+  });
+
+  // 株式会社C: メッセージとアセスメントをOFF
+  const tenantC = await prisma.tenant.upsert({
+    where: { id: TENANT_C_ID },
+    update: {
+      name: '株式会社C',
+      industry: 'IT・通信',
+      tenantCode: 'T-003',
+      svcMessage: false,
+      svcAssessment: false,
+    },
+    create: {
+      id: TENANT_C_ID,
+      tenantCode: 'T-003',
+      name: '株式会社C',
+      industry: 'IT・通信',
+      isActive: true,
+      svcMessage: false,
+      svcAssessment: false,
+    },
+  });
+
+  console.log(`  Tenants: ${tenant.name}, ${tenantB.name}, ${tenantC.name}`);
 
   // ===== 2. Sites =====
   const siteFlowerLab = await prisma.site.upsert({
@@ -70,14 +123,49 @@ async function main() {
       isActive: true,
     },
   });
-  console.log(`  Sites: ${siteFlowerLab.name}, ${siteSatellite.name}`);
+  const siteBYokohama = await prisma.site.upsert({
+    where: { id: SITE_B_YOKOHAMA_ID },
+    update: {
+      name: 'サテライトオフィス横浜',
+      siteType: 'satellite_office',
+      address: '神奈川県横浜市西区みなとみらい2-3-1',
+    },
+    create: {
+      id: SITE_B_YOKOHAMA_ID,
+      tenantId: TENANT_B_ID,
+      name: 'サテライトオフィス横浜',
+      siteType: 'satellite_office',
+      address: '神奈川県横浜市西区みなとみらい2-3-1',
+      isActive: true,
+    },
+  });
+
+  const siteCOsaka = await prisma.site.upsert({
+    where: { id: SITE_C_OSAKA_ID },
+    update: {
+      name: 'リモートオフィス大阪',
+      siteType: 'satellite_office',
+      address: '大阪府大阪市北区梅田1-1-1',
+    },
+    create: {
+      id: SITE_C_OSAKA_ID,
+      tenantId: TENANT_C_ID,
+      name: 'リモートオフィス大阪',
+      siteType: 'satellite_office',
+      address: '大阪府大阪市北区梅田1-1-1',
+      isActive: true,
+    },
+  });
+
+  console.log(`  Sites: ${siteFlowerLab.name}, ${siteSatellite.name}, ${siteBYokohama.name}, ${siteCOsaka.name}`);
 
   // ===== 3. Users =====
   const userAdmin = await prisma.user.upsert({
     where: { email: 'admin@sann.co.jp' },
-    update: { name: '管理太郎', role: 'R01', passwordHash },
+    update: { name: '管理太郎', role: 'R01', passwordHash, userCode: 'U-001' },
     create: {
       id: USER_ADMIN_ID,
+      userCode: 'U-001',
       tenantId: TENANT_ID,
       siteId: null,
       email: 'admin@sann.co.jp',
@@ -90,50 +178,151 @@ async function main() {
 
   const userCoach = await prisma.user.upsert({
     where: { email: 'coach@sann.co.jp' },
-    update: { name: '指導花子', role: 'R03', siteId: SITE_FLOWER_LAB_ID, passwordHash },
+    update: { name: '指導花子', role: 'R02', siteId: SITE_FLOWER_LAB_ID, passwordHash, userCode: 'U-002' },
     create: {
       id: USER_COACH_ID,
+      userCode: 'U-002',
       tenantId: TENANT_ID,
       siteId: SITE_FLOWER_LAB_ID,
       email: 'coach@sann.co.jp',
       passwordHash: passwordHash,
       name: '指導花子',
-      role: 'R03',
+      role: 'R02',
       isActive: true,
     },
   });
 
   const userMember1 = await prisma.user.upsert({
     where: { email: 'member1@sann.co.jp' },
-    update: { name: '田中一郎', role: 'R04', siteId: SITE_FLOWER_LAB_ID, passwordHash },
+    update: { name: '田中一郎', role: 'R03', siteId: SITE_FLOWER_LAB_ID, passwordHash, userCode: 'U-003' },
     create: {
       id: USER_MEMBER1_ID,
+      userCode: 'U-003',
       tenantId: TENANT_ID,
       siteId: SITE_FLOWER_LAB_ID,
       email: 'member1@sann.co.jp',
       passwordHash: passwordHash,
       name: '田中一郎',
-      role: 'R04',
+      role: 'R03',
       isActive: true,
     },
   });
 
   const userMember2 = await prisma.user.upsert({
     where: { email: 'member2@sann.co.jp' },
-    update: { name: '鈴木次郎', role: 'R04', siteId: SITE_SATELLITE_ID, passwordHash },
+    update: { name: '鈴木次郎', role: 'R03', siteId: SITE_SATELLITE_ID, passwordHash, userCode: 'U-004' },
     create: {
       id: USER_MEMBER2_ID,
+      userCode: 'U-004',
       tenantId: TENANT_ID,
       siteId: SITE_SATELLITE_ID,
       email: 'member2@sann.co.jp',
       passwordHash: passwordHash,
       name: '鈴木次郎',
+      role: 'R03',
+      isActive: true,
+    },
+  });
+  const userClientHr = await prisma.user.upsert({
+    where: { email: 'hr@client.co.jp' },
+    update: { name: '佐藤美咲', role: 'R04', passwordHash, userCode: 'U-005' },
+    create: {
+      id: USER_CLIENT_HR_ID,
+      userCode: 'U-005',
+      tenantId: TENANT_ID,
+      siteId: null,
+      email: 'hr@client.co.jp',
+      passwordHash: passwordHash,
+      name: '佐藤美咲',
       role: 'R04',
       isActive: true,
     },
   });
+
+  const userClientEmp = await prisma.user.upsert({
+    where: { email: 'emp@client.co.jp' },
+    update: { name: '高橋健太', role: 'R05', passwordHash, userCode: 'U-006' },
+    create: {
+      id: USER_CLIENT_EMP_ID,
+      userCode: 'U-006',
+      tenantId: TENANT_ID,
+      siteId: null,
+      email: 'emp@client.co.jp',
+      passwordHash: passwordHash,
+      name: '高橋健太',
+      role: 'R05',
+      isActive: true,
+    },
+  });
+
+  // --- 株式会社B ユーザー ---
+  const userBHr = await prisma.user.upsert({
+    where: { email: 'hr@companyb.co.jp' },
+    update: { name: '山田花子', role: 'R04', passwordHash, userCode: 'U-007' },
+    create: {
+      id: USER_B_HR_ID,
+      userCode: 'U-007',
+      tenantId: TENANT_B_ID,
+      siteId: null,
+      email: 'hr@companyb.co.jp',
+      passwordHash,
+      name: '山田花子',
+      role: 'R04',
+      isActive: true,
+    },
+  });
+
+  const userBEmp = await prisma.user.upsert({
+    where: { email: 'emp@companyb.co.jp' },
+    update: { name: '中村大輔', role: 'R05', passwordHash, userCode: 'U-008' },
+    create: {
+      id: USER_B_EMP_ID,
+      userCode: 'U-008',
+      tenantId: TENANT_B_ID,
+      siteId: null,
+      email: 'emp@companyb.co.jp',
+      passwordHash,
+      name: '中村大輔',
+      role: 'R05',
+      isActive: true,
+    },
+  });
+
+  // --- 株式会社C ユーザー ---
+  const userCHr = await prisma.user.upsert({
+    where: { email: 'hr@companyc.co.jp' },
+    update: { name: '小林真由美', role: 'R04', passwordHash, userCode: 'U-009' },
+    create: {
+      id: USER_C_HR_ID,
+      userCode: 'U-009',
+      tenantId: TENANT_C_ID,
+      siteId: null,
+      email: 'hr@companyc.co.jp',
+      passwordHash,
+      name: '小林真由美',
+      role: 'R04',
+      isActive: true,
+    },
+  });
+
+  const userCEmp = await prisma.user.upsert({
+    where: { email: 'emp@companyc.co.jp' },
+    update: { name: '渡辺翔太', role: 'R05', passwordHash, userCode: 'U-010' },
+    create: {
+      id: USER_C_EMP_ID,
+      userCode: 'U-010',
+      tenantId: TENANT_C_ID,
+      siteId: null,
+      email: 'emp@companyc.co.jp',
+      passwordHash,
+      name: '渡辺翔太',
+      role: 'R05',
+      isActive: true,
+    },
+  });
+
   console.log(
-    `  Users: ${userAdmin.name}, ${userCoach.name}, ${userMember1.name}, ${userMember2.name}`,
+    `  Users: ${userAdmin.name}, ${userCoach.name}, ${userMember1.name}, ${userMember2.name}, ${userClientHr.name}, ${userClientEmp.name}, ${userBHr.name}, ${userBEmp.name}, ${userCHr.name}, ${userCEmp.name}`,
   );
 
   // ===== 4. Members =====
@@ -144,6 +333,7 @@ async function main() {
       disabilityType: 'intellectual',
       employmentType: 'permanent',
       status: 'active',
+      avatarId: 'avatar-03',
     },
     create: {
       id: MEMBER1_ID,
@@ -154,6 +344,7 @@ async function main() {
       disabilityType: 'intellectual',
       employmentType: 'permanent',
       status: 'active',
+      avatarId: 'avatar-03',
     },
   });
 
@@ -164,6 +355,7 @@ async function main() {
       disabilityType: 'mental',
       employmentType: 'fixed_term',
       status: 'active',
+      avatarId: 'avatar-07',
     },
     create: {
       id: MEMBER2_ID,
@@ -174,6 +366,7 @@ async function main() {
       disabilityType: 'mental',
       employmentType: 'fixed_term',
       status: 'active',
+      avatarId: 'avatar-07',
     },
   });
   console.log(`  Members: ${member1.employeeNumber}, ${member2.employeeNumber}`);
@@ -524,45 +717,45 @@ async function main() {
   const thanksCards = [
     {
       id: THANKS_IDS[0],
-      fromUserId: USER_COACH_ID,
+      fromUserId: USER_CLIENT_HR_ID,   // 佐藤美咲（R04・人事）→ 田中一郎（R03）
       toUserId: USER_MEMBER1_ID,
-      content: '今日も丁寧にお花の検品をしてくれてありがとう！',
-      category: 'great_job',
+      content: '素敵なドライフラワーフレームをありがとうございます！オフィスに飾っています。',
+      category: 'warm_thanks',
     },
     {
       id: THANKS_IDS[1],
-      fromUserId: USER_MEMBER1_ID,
-      toUserId: USER_COACH_ID,
-      content: '優しく教えてくださりありがとうございます。',
-      category: 'kindness',
+      fromUserId: USER_CLIENT_EMP_ID,  // 高橋健太（R05・社員）→ 田中一郎（R03）
+      toUserId: USER_MEMBER1_ID,
+      content: '誕生日に届いたガーベラの花束、とても元気をもらいました！',
+      category: 'cheer_up',
     },
     {
       id: THANKS_IDS[2],
-      fromUserId: USER_ADMIN_ID,
+      fromUserId: USER_CLIENT_EMP_ID,  // 高橋健太（R05・社員）→ 鈴木次郎（R03）
       toUserId: USER_MEMBER2_ID,
-      content: 'データ入力の正確さが素晴らしいです！',
-      category: 'great_job',
+      content: 'ミニブーケがとても綺麗で感動しました。丁寧なお仕事ですね。',
+      category: 'warm_thanks',
     },
     {
       id: THANKS_IDS[3],
-      fromUserId: USER_MEMBER2_ID,
-      toUserId: USER_MEMBER1_ID,
-      content: '一緒にがんばれて嬉しいです。',
-      category: 'teamwork',
+      fromUserId: USER_CLIENT_HR_ID,   // 佐藤美咲（R04・人事）→ 鈴木次郎（R03）
+      toUserId: USER_MEMBER2_ID,
+      content: 'チューリップのアレンジメント、会議室が明るくなりました。ありがとう！',
+      category: 'calm_relax',
     },
     {
       id: THANKS_IDS[4],
-      fromUserId: USER_COACH_ID,
-      toUserId: USER_MEMBER2_ID,
-      content: '新しいアレンジメントのアイデア、とても素敵でした！',
-      category: 'creativity',
+      fromUserId: USER_CLIENT_HR_ID,   // 佐藤美咲（R04・人事）→ 田中一郎（R03）
+      toUserId: USER_MEMBER1_ID,
+      content: 'ハーバリウムのデザイン、とてもセンスがいいですね。集中力がすごい！',
+      category: 'focus_clear',
     },
   ];
 
   for (const tc of thanksCards) {
     await prisma.thanksCard.upsert({
       where: { id: tc.id },
-      update: { content: tc.content, category: tc.category },
+      update: { fromUserId: tc.fromUserId, toUserId: tc.toUserId, content: tc.content, category: tc.category },
       create: tc,
     });
   }
@@ -580,27 +773,150 @@ async function main() {
 
   const vitalScores = [
     // Member1 — today
-    { id: VITAL_IDS[0], memberId: MEMBER1_ID, recordDate: today, mood: 4, sleep: 3, condition: 4, streakDays: 3 },
+    { id: VITAL_IDS[0], memberId: MEMBER1_ID, recordDate: today, mood: 4, sleep: 3, condition: 4, bodyTemperature: 36.5, mealBreakfast: true, mealLunch: true, mealDinner: false, streakDays: 3 },
     // Member1 — yesterday
-    { id: VITAL_IDS[1], memberId: MEMBER1_ID, recordDate: yesterday, mood: 3, sleep: 4, condition: 3, streakDays: 2 },
+    { id: VITAL_IDS[1], memberId: MEMBER1_ID, recordDate: yesterday, mood: 3, sleep: 4, condition: 3, bodyTemperature: 36.8, mealBreakfast: true, mealLunch: false, mealDinner: true, streakDays: 2 },
     // Member1 — two days ago
-    { id: VITAL_IDS[2], memberId: MEMBER1_ID, recordDate: twoDaysAgo, mood: 4, sleep: 4, condition: 4, streakDays: 1 },
+    { id: VITAL_IDS[2], memberId: MEMBER1_ID, recordDate: twoDaysAgo, mood: 4, sleep: 4, condition: 4, bodyTemperature: null, mealBreakfast: null, mealLunch: null, mealDinner: null, streakDays: 1 },
     // Member2 — today
-    { id: VITAL_IDS[3], memberId: MEMBER2_ID, recordDate: today, mood: 5, sleep: 5, condition: 4, streakDays: 2 },
+    { id: VITAL_IDS[3], memberId: MEMBER2_ID, recordDate: today, mood: 5, sleep: 5, condition: 4, bodyTemperature: 36.2, mealBreakfast: true, mealLunch: true, mealDinner: true, streakDays: 2 },
     // Member2 — yesterday
-    { id: VITAL_IDS[4], memberId: MEMBER2_ID, recordDate: yesterday, mood: 4, sleep: 4, condition: 5, streakDays: 1 },
+    { id: VITAL_IDS[4], memberId: MEMBER2_ID, recordDate: yesterday, mood: 4, sleep: 4, condition: 5, bodyTemperature: 36.4, mealBreakfast: false, mealLunch: true, mealDinner: true, streakDays: 1 },
     // Member2 — two days ago
-    { id: VITAL_IDS[5], memberId: MEMBER2_ID, recordDate: twoDaysAgo, mood: 3, sleep: 3, condition: 3, streakDays: 0 },
+    { id: VITAL_IDS[5], memberId: MEMBER2_ID, recordDate: twoDaysAgo, mood: 3, sleep: 3, condition: 3, bodyTemperature: null, mealBreakfast: null, mealLunch: null, mealDinner: null, streakDays: 0 },
   ];
 
   for (const vs of vitalScores) {
     await prisma.vitalScore.upsert({
       where: { memberId_recordDate: { memberId: vs.memberId, recordDate: vs.recordDate } },
-      update: { mood: vs.mood, sleep: vs.sleep, condition: vs.condition, streakDays: vs.streakDays },
+      update: { mood: vs.mood, sleep: vs.sleep, condition: vs.condition, bodyTemperature: vs.bodyTemperature, mealBreakfast: vs.mealBreakfast, mealLunch: vs.mealLunch, mealDinner: vs.mealDinner, streakDays: vs.streakDays },
       create: vs,
     });
   }
   console.log(`  VitalScores: ${vitalScores.length} upserted`);
+
+  // ===== 9. FlowerProducts =====
+  const flowerProducts = [
+    {
+      productCode: 'FP-001',
+      name: 'ミニブーケ（バラ）',
+      category: 'バラ',
+      price: 1500,
+      description: 'デスクに飾れるミニサイズのバラブーケ。赤・ピンク・白から選べます。',
+    },
+    {
+      productCode: 'FP-002',
+      name: 'チューリップアレンジメント',
+      category: 'チューリップ',
+      price: 2000,
+      description: '春の彩りを届けるチューリップのアレンジメント。',
+    },
+    {
+      productCode: 'FP-003',
+      name: 'ドライフラワーフレーム',
+      category: 'ドライフラワー',
+      price: 2500,
+      description: 'フレームに収めたドライフラワー。長く楽しめるインテリアギフト。',
+    },
+    {
+      productCode: 'FP-004',
+      name: 'ガーベラの花束',
+      category: 'ガーベラ',
+      price: 1800,
+      description: '明るいガーベラの花束。元気を届けたいときに。',
+    },
+    {
+      productCode: 'FP-005',
+      name: 'ハーバリウムボトル',
+      category: 'ハーバリウム',
+      price: 3000,
+      description: 'オイルに浮かぶ花が美しいハーバリウム。手作りの温もりを感じるギフト。',
+    },
+  ];
+
+  for (const fp of flowerProducts) {
+    await prisma.flowerProduct.upsert({
+      where: { productCode: fp.productCode },
+      update: {
+        name: fp.name,
+        category: fp.category,
+        price: fp.price,
+        description: fp.description,
+      },
+      create: {
+        ...fp,
+        isActive: true,
+      },
+    });
+  }
+  console.log(`  FlowerProducts: ${flowerProducts.length} upserted`);
+
+  // ===== 10. FlowerOrders =====
+  const ORDER_IDS = [
+    '00000000-0000-4000-a000-000000006001',
+    '00000000-0000-4000-a000-000000006002',
+    '00000000-0000-4000-a000-000000006003',
+  ];
+
+  const flowerProductRecords = await prisma.flowerProduct.findMany({
+    orderBy: { productCode: 'asc' },
+  });
+
+  const flowerOrders = [
+    {
+      id: ORDER_IDS[0],
+      orderCode: 'ORD-001',
+      userId: USER_CLIENT_EMP_ID,
+      flowerProductId: flowerProductRecords[0]?.id,
+      quantity: 2,
+      totalPrice: (flowerProductRecords[0]?.price ?? 0) * 2,
+      message: 'いつもお疲れ様です。ありがとうございます。',
+      recipientName: '山田太郎',
+      recipientAddress: null,
+      status: 'confirmed',
+    },
+    {
+      id: ORDER_IDS[1],
+      orderCode: 'ORD-002',
+      userId: USER_CLIENT_HR_ID,
+      flowerProductId: flowerProductRecords[2]?.id,
+      quantity: 1,
+      totalPrice: flowerProductRecords[2]?.price ?? 0,
+      message: null,
+      recipientName: null,
+      recipientAddress: null,
+      status: 'pending',
+    },
+    {
+      id: ORDER_IDS[2],
+      orderCode: 'ORD-003',
+      userId: USER_CLIENT_EMP_ID,
+      flowerProductId: flowerProductRecords[3]?.id,
+      quantity: 1,
+      totalPrice: flowerProductRecords[3]?.price ?? 0,
+      message: 'お誕生日おめでとうございます！',
+      recipientName: '佐藤花子',
+      recipientAddress: '東京都千代田区丸の内1-1-1',
+      status: 'delivered',
+    },
+  ];
+
+  for (const fo of flowerOrders) {
+    if (!fo.flowerProductId) continue;
+    await prisma.flowerOrder.upsert({
+      where: { id: fo.id },
+      update: {
+        status: fo.status,
+        quantity: fo.quantity,
+        totalPrice: fo.totalPrice,
+        message: fo.message,
+        recipientName: fo.recipientName,
+        recipientAddress: fo.recipientAddress,
+      },
+      create: fo,
+    });
+  }
+  console.log(`  FlowerOrders: ${flowerOrders.length} upserted`);
 
   // ===== Summary =====
   const counts = {
@@ -612,6 +928,8 @@ async function main() {
     taskAssignments: await prisma.taskAssignment.count(),
     thanksCards: await prisma.thanksCard.count(),
     vitalScores: await prisma.vitalScore.count(),
+    flowerProducts: await prisma.flowerProduct.count(),
+    flowerOrders: await prisma.flowerOrder.count(),
   };
   console.log('\n📊 Seed summary:');
   console.log(`  Tenants:         ${counts.tenants}`);
@@ -622,6 +940,8 @@ async function main() {
   console.log(`  TaskAssignments: ${counts.taskAssignments}`);
   console.log(`  ThanksCards:     ${counts.thanksCards}`);
   console.log(`  VitalScores:     ${counts.vitalScores}`);
+  console.log(`  FlowerProducts:  ${counts.flowerProducts}`);
+  console.log(`  FlowerOrders:    ${counts.flowerOrders}`);
   console.log('\n✅ Seeding completed successfully!');
 }
 

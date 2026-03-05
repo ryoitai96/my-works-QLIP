@@ -12,10 +12,21 @@ datasource db {
 
 /// 企業テナント
 model Tenant {
-  id        String   @id @default(uuid())
-  name      String /// 企業名
-  industry  String? /// 業種
+  id         String   @id @default(uuid())
+  tenantCode String   @unique /// 表示用企業ID（例: T-001）
+  name       String /// 企業名
+  industry   String? /// 業種
   isActive  Boolean  @default(true)
+
+  /// サービストグル（テナント別ON/OFF）
+  svcAttendance  Boolean @default(true) @map("svc_attendance")
+  svcHealthCheck Boolean @default(true) @map("svc_health_check")
+  svcAssessment  Boolean @default(true) @map("svc_assessment")
+  svcMicroTask   Boolean @default(true) @map("svc_micro_task")
+  svcMessage     Boolean @default(true) @map("svc_message")
+  svcThanks      Boolean @default(true) @map("svc_thanks")
+  svcFlowerOrder Boolean @default(true) @map("svc_flower_order")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -23,6 +34,7 @@ model Tenant {
   users      User[]
   members    Member[]
   microTasks MicroTask[]
+  teams      Team[]
 
   @@map("tenants")
 }
@@ -51,6 +63,7 @@ model Site {
 /// ユーザーアカウント（全ロール共通）
 model User {
   id           String   @id @default(uuid())
+  userCode     String   @unique /// 表示用個人ID（例: U-001）
   tenantId     String?
   tenant       Tenant?  @relation(fields: [tenantId], references: [id])
   siteId       String?
@@ -69,6 +82,15 @@ model User {
   profileUpdates    CharacteristicProfile[] @relation("UpdatedBy")
   sentThanks        ThanksCard[]            @relation("SentThanks")
   receivedThanks    ThanksCard[]            @relation("ReceivedThanks")
+  uploadedDocuments Document[]              @relation("UploadedDocuments")
+  teamMemberships   TeamMembership[]
+  placedOrders      FlowerOrder[]           @relation("PlacedOrders")
+  requestedCorrections AttendanceCorrectionRequest[] @relation("RequestedCorrections")
+  reviewedCorrections  AttendanceCorrectionRequest[] @relation("ReviewedCorrections")
+  sentMessages         Message[]                     @relation("SentMessages")
+  receivedMessages     Message[]                     @relation("ReceivedMessages")
+  messageComments      MessageComment[]
+  messageReads         MessageRead[]
 
   @@map("users")
 }
@@ -83,7 +105,9 @@ model Member {
   siteId   String
   site     Site   @relation(fields: [siteId], references: [id])
 
+  avatarId       String? @default("avatar-01") /// アバターID
   employeeNumber String? @unique /// 従業員番号
+  gender         String? /// "male"|"female"|"other"|"prefer_not_to_say"
 
   /// ※暗号化対象（L3）
   dateOfBirth       DateTime? /// 生年月日
@@ -108,6 +132,9 @@ model Member {
   taskAssignments       TaskAssignment[]
   assessmentResults     AssessmentResult[]
   vitalScores           VitalScore[]
+  documents             Document[]
+  attendanceRecords     AttendanceRecord[]
+  workSchedule          MemberWorkSchedule?
   @@map("members")
 }
 
@@ -272,6 +299,12 @@ model VitalScore {
   /// ※暗号化対象（L3）
   condition Int /// 体調 1-5（必須）
 
+  bodyTemperature Float?   /// 体温（35.0-42.0）任意
+  sleepHours      Float?   /// 睡眠時間（0〜12、0.5刻み）任意
+  mealBreakfast   Boolean? /// 朝食を摂ったか（任意）
+  mealLunch       Boolean? /// 昼食を摂ったか（任意）
+  mealDinner      Boolean? /// 夕食を摂ったか（任意）
+
   /// ※暗号化対象（L4）
   medicationTaken String? /// "taken"|"not_taken"|"not_applicable"（任意・同意ベース）
 
@@ -284,6 +317,48 @@ model VitalScore {
 
   @@unique([memberId, recordDate])
   @@map("vital_scores")
+}
+
+// ===== 花の商品マスタ =====
+
+/// 花の商品（MW管理者・支援員が登録管理）
+model FlowerProduct {
+  id          String   @id @default(uuid())
+  productCode String   @unique /// 例: "FP-001"
+  name        String /// 商品名
+  category    String /// 花の種類（バラ、チューリップ等）
+  price       Int /// 価格（円）
+  description String? /// 説明文
+  imageUrl    String? /// アップロード画像パス
+  isActive    Boolean  @default(true) /// 有効/無効
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders FlowerOrder[]
+
+  @@map("flower_products")
+}
+
+/// 花の注文
+model FlowerOrder {
+  id              String        @id @default(uuid())
+  orderCode       String        @unique /// 例: "ORD-001"
+  userId          String
+  user            User          @relation("PlacedOrders", fields: [userId], references: [id])
+  flowerProductId String
+  flowerProduct   FlowerProduct @relation(fields: [flowerProductId], references: [id])
+
+  quantity         Int          @default(1)
+  totalPrice       Int
+  message          String?
+  recipientName    String?
+  recipientAddress String?
+  status           String       @default("pending") /// pending→confirmed→in_production→delivered
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([userId, createdAt])
+  @@map("flower_orders")
 }
 
 // ===== モジュールD: サンクスカード =====
@@ -305,4 +380,201 @@ model ThanksCard {
 
   @@index([toUserId, createdAt])
   @@map("thanks_cards")
+}
+
+// ===== 書類管理 =====
+
+/// メンバー関連書類（障害者手帳コピー、雇用契約書等）
+model Document {
+  id       String @id @default(uuid())
+  memberId String
+  member   Member @relation(fields: [memberId], references: [id])
+
+  fileName String /// 元ファイル名
+  fileType String /// MIME type
+  fileSize Int /// バイト数
+  filePath String /// サーバー上の保存パス
+
+  uploadedById String
+  uploadedBy   User   @relation("UploadedDocuments", fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([memberId])
+  @@map("documents")
+}
+
+// ===== チーム管理 =====
+
+/// チーム
+model Team {
+  id             String   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  name           String
+  departmentCode String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  memberships TeamMembership[]
+
+  @@map("teams")
+}
+
+/// チームメンバーシップ
+model TeamMembership {
+  id        String   @id @default(uuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  role      String /// "manager" | "member"
+  createdAt DateTime @default(now())
+
+  @@unique([teamId, userId])
+  @@map("team_memberships")
+}
+
+// ===== 勤怠管理 =====
+
+/// 勤怠レコード（1メンバー1日1レコード）
+model AttendanceRecord {
+  id       String @id @default(uuid())
+  memberId String
+  member   Member @relation(fields: [memberId], references: [id])
+
+  recordDate   DateTime @db.Date /// 勤務日（日付のみ）
+  clockIn      DateTime? /// 出勤打刻時刻
+  clockOut     DateTime? /// 退勤打刻時刻
+  status       String   @default("not_clocked_in") /// "not_clocked_in"|"clocked_in"|"on_break"|"clocked_out"
+  workMinutes  Int?     /// 実労働時間（分）— 退勤時に自動算出
+  breakMinutes Int?     /// 休憩時間合計（分）— 退勤時に自動算出
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  breaks      AttendanceBreak[]
+  corrections AttendanceCorrectionRequest[]
+
+  @@unique([memberId, recordDate])
+  @@index([memberId, recordDate])
+  @@map("attendance_records")
+}
+
+/// 休憩レコード（1勤怠レコードに複数）
+model AttendanceBreak {
+  id                 String           @id @default(uuid())
+  attendanceRecordId String
+  attendanceRecord   AttendanceRecord @relation(fields: [attendanceRecordId], references: [id], onDelete: Cascade)
+
+  breakStart DateTime  /// 休憩開始時刻
+  breakEnd   DateTime? /// 休憩終了時刻
+
+  createdAt DateTime @default(now())
+
+  @@map("attendance_breaks")
+}
+
+/// 勤怠修正依頼
+model AttendanceCorrectionRequest {
+  id                 String           @id @default(uuid())
+  attendanceRecordId String
+  attendanceRecord   AttendanceRecord @relation(fields: [attendanceRecordId], references: [id], onDelete: Cascade)
+
+  requestedByUserId String
+  requestedBy       User   @relation("RequestedCorrections", fields: [requestedByUserId], references: [id])
+
+  correctionType String /// "clock_in"|"clock_out"|"break"|"other"
+  requestedValue String /// 修正希望値（ISO文字列等）
+  reason         String /// 修正理由
+
+  status         String    @default("pending") /// "pending"|"approved"|"rejected"|"returned"
+  reviewedByUserId String?
+  reviewedBy     User?     @relation("ReviewedCorrections", fields: [reviewedByUserId], references: [id])
+  reviewComment  String?   /// 承認/却下コメント
+  reviewedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requestedByUserId, status])
+  @@map("attendance_correction_requests")
+}
+
+/// メンバー別就業時間設定
+model MemberWorkSchedule {
+  id       String @id @default(uuid())
+  memberId String @unique
+  member   Member @relation(fields: [memberId], references: [id])
+
+  startTime       String @default("09:00") /// 始業時刻（HH:mm）
+  endTime         String @default("18:00") /// 終業時刻（HH:mm）
+  breakMinutes    Int    @default(60)      /// 所定休憩時間（分）
+  workDaysPerWeek Int    @default(5)       /// 週勤務日数
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("member_work_schedules")
+}
+
+// ===== メッセージ（申請・連絡） =====
+
+/// 申請/連絡メッセージ（R03→R04）
+model Message {
+  id       String @id @default(uuid())
+  tenantId String
+
+  fromUserId String
+  fromUser   User @relation("SentMessages", fields: [fromUserId], references: [id])
+
+  toUserId String
+  toUser   User @relation("ReceivedMessages", fields: [toUserId], references: [id])
+
+  category String /// "late_notice"|"early_leave"|"paid_leave"|"welfare"|"meeting"|"other"
+  subject  String /// 件名
+  content  String /// 本文
+
+  status String @default("open") /// "open"|"resolved"|"closed"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  comments MessageComment[]
+  reads    MessageRead[]
+
+  @@index([fromUserId, createdAt])
+  @@index([toUserId, createdAt])
+  @@index([tenantId, createdAt])
+  @@map("messages")
+}
+
+/// メッセージコメント（スレッド返信）
+model MessageComment {
+  id        String  @id @default(uuid())
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+  content String
+
+  createdAt DateTime @default(now())
+
+  @@index([messageId, createdAt])
+  @@map("message_comments")
+}
+
+/// メッセージ既読管理
+model MessageRead {
+  id         String   @id @default(uuid())
+  messageId  String
+  message    Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  lastReadAt DateTime @default(now())
+
+  @@unique([messageId, userId])
+  @@map("message_reads")
 }
