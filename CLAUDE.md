@@ -28,7 +28,7 @@ project-QLIP/
 │   │   ├── src/components/     # UIコンポーネント
 │   │   ├── src/lib/            # ユーティリティ、APIクライアント
 │   │   └── src/hooks/          # カスタムフック
-│   └── api/                    # NestJS バックエンドAPI (port 3001)
+│   └── api/                    # NestJS バックエンドAPI (port 3100)
 │       ├── src/modules/        # auth, member, task, assessment, health-check, thanks, import
 │       ├── src/common/         # Guards, Decorators, Filters
 │       ├── src/config/         # 設定管理
@@ -49,7 +49,7 @@ project-QLIP/
 ```bash
 # pnpmが未インストールの場合、npx pnpm を使用
 npx pnpm install          # 依存関係インストール
-npx pnpm dev              # web(3000) + api(3001) 同時起動
+npx pnpm dev              # web(3000) + api(3100) 同時起動
 npx pnpm build            # 全パッケージビルド
 npx pnpm lint             # ESLint実行
 npx pnpm format           # Prettier実行
@@ -86,5 +86,5 @@ npx prisma studio          # Prisma Studio起動
 
 ## 環境変数（.env.example参照）
 - `DATABASE_URL` — PostgreSQL接続文字列
-- `API_PORT` — APIサーバーポート（デフォルト: 3001）
+- `API_PORT` — APIサーバーポート（デフォルト: 3100）
 - `JWT_SECRET` — JWT署名キー
