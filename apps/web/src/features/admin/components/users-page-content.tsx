@@ -1,17 +1,28 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROLE_LABELS, type RoleId } from '@qlip/shared';
 import { ApiClientError } from '../../../lib/api-client';
 import { authStore } from '../../auth/auth-store';
 import { type UserSummary, fetchUsers } from '../api';
 
+type SortKey = 'name' | 'email' | 'role' | 'tenant' | 'createdAt';
+type SortOrder = 'asc' | 'desc';
+
+function SortIndicator({ active, order }: { active: boolean; order: SortOrder }) {
+  if (!active) return <span className="ml-1 text-gray-300">▲</span>;
+  return <span className="ml-1">{order === 'asc' ? '▲' : '▼'}</span>;
+}
+
 export function UsersPageContent() {
   const router = useRouter();
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
   const load = useCallback(async () => {
     if (!authStore.isAuthenticated()) {
@@ -39,6 +50,57 @@ export function UsersPageContent() {
     load();
   }, [load]);
 
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortOrder('asc');
+    }
+  };
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    let result = users;
+
+    if (q) {
+      result = result.filter(
+        (u) =>
+          u.name.toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q) ||
+          (ROLE_LABELS[u.role as RoleId] ?? u.role).toLowerCase().includes(q) ||
+          (u.tenant?.name ?? '').toLowerCase().includes(q),
+      );
+    }
+
+    result = [...result].sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case 'name':
+          cmp = a.name.localeCompare(b.name, 'ja');
+          break;
+        case 'email':
+          cmp = a.email.localeCompare(b.email);
+          break;
+        case 'role':
+          cmp = (ROLE_LABELS[a.role as RoleId] ?? a.role).localeCompare(
+            ROLE_LABELS[b.role as RoleId] ?? b.role,
+            'ja',
+          );
+          break;
+        case 'tenant':
+          cmp = (a.tenant?.name ?? '').localeCompare(b.tenant?.name ?? '', 'ja');
+          break;
+        case 'createdAt':
+          cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+      }
+      return sortOrder === 'asc' ? cmp : -cmp;
+    });
+
+    return result;
+  }, [users, search, sortKey, sortOrder]);
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -63,62 +125,109 @@ export function UsersPageContent() {
     );
   }
 
+  const thClass =
+    'px-5 py-3 cursor-pointer select-none transition-colors hover:text-gray-700';
+
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 text-xs font-medium uppercase tracking-wider text-gray-500">
-              <th className="px-5 py-3">氏名</th>
-              <th className="px-5 py-3">メール</th>
-              <th className="px-5 py-3">ロール</th>
-              <th className="px-5 py-3">所属企業</th>
-              <th className="px-5 py-3 text-center">ステータス</th>
-              <th className="px-5 py-3">登録日</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {users.map((u) => (
-              <tr
-                key={u.id}
-                onClick={() => router.push(`/admin/users/${u.id}`)}
-                className="cursor-pointer transition-colors hover:bg-gray-50"
-              >
-                <td className="px-5 py-3.5 font-medium text-gray-900">
-                  {u.name}
-                </td>
-                <td className="px-5 py-3.5 text-gray-600">{u.email}</td>
-                <td className="px-5 py-3.5 text-gray-600">
-                  {ROLE_LABELS[u.role as RoleId] ?? u.role}
-                </td>
-                <td className="px-5 py-3.5 text-gray-600">
-                  {u.tenant?.name ?? '—'}
-                </td>
-                <td className="px-5 py-3.5 text-center">
-                  <span
-                    className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      u.isActive
-                        ? 'bg-green-50 text-green-700'
-                        : 'bg-gray-100 text-gray-500'
-                    }`}
-                  >
-                    {u.isActive ? '有効' : '無効'}
-                  </span>
-                </td>
-                <td className="px-5 py-3.5 text-gray-500">
-                  {new Date(u.createdAt).toLocaleDateString('ja-JP')}
-                </td>
+    <div className="space-y-4">
+      <div className="relative">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="氏名・メール・ロール・所属企業で検索..."
+          className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-[#ffc000] focus:outline-none focus:ring-1 focus:ring-[#ffc000]/30"
+        />
+        <svg
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
+        </svg>
+      </div>
+
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-5 py-3">個人ID</th>
+                <th className={thClass} onClick={() => handleSort('name')}>
+                  氏名
+                  <SortIndicator active={sortKey === 'name'} order={sortOrder} />
+                </th>
+                <th className={thClass} onClick={() => handleSort('email')}>
+                  メール
+                  <SortIndicator active={sortKey === 'email'} order={sortOrder} />
+                </th>
+                <th className={thClass} onClick={() => handleSort('role')}>
+                  ロール
+                  <SortIndicator active={sortKey === 'role'} order={sortOrder} />
+                </th>
+                <th className={thClass} onClick={() => handleSort('tenant')}>
+                  所属企業
+                  <SortIndicator active={sortKey === 'tenant'} order={sortOrder} />
+                </th>
+                <th className="px-5 py-3 text-center">ステータス</th>
+                <th className={thClass} onClick={() => handleSort('createdAt')}>
+                  登録日
+                  <SortIndicator active={sortKey === 'createdAt'} order={sortOrder} />
+                </th>
               </tr>
-            ))}
-            {users.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-5 py-8 text-center text-gray-400">
-                  登録されているユーザーはいません
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {filtered.map((u) => (
+                <tr
+                  key={u.id}
+                  onClick={() => router.push(`/admin/users/${u.id}`)}
+                  className="cursor-pointer transition-colors hover:bg-gray-50"
+                >
+                  <td className="px-5 py-3.5 font-mono text-xs text-gray-500">
+                    {u.userCode}
+                  </td>
+                  <td className="px-5 py-3.5 font-medium text-gray-900">
+                    {u.name}
+                  </td>
+                  <td className="px-5 py-3.5 text-gray-600">{u.email}</td>
+                  <td className="px-5 py-3.5 text-gray-600">
+                    {ROLE_LABELS[u.role as RoleId] ?? u.role}
+                  </td>
+                  <td className="px-5 py-3.5 text-gray-600">
+                    {u.tenant?.name ?? '—'}
+                  </td>
+                  <td className="px-5 py-3.5 text-center">
+                    <span
+                      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        u.isActive
+                          ? 'bg-green-50 text-green-700'
+                          : 'bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      {u.isActive ? '有効' : '無効'}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3.5 text-gray-500">
+                    {new Date(u.createdAt).toLocaleDateString('ja-JP')}
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-5 py-8 text-center text-gray-400">
+                    {search ? '検索条件に一致するユーザーはいません' : '登録されているユーザーはいません'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

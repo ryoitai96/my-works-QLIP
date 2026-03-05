@@ -32,3 +32,42 @@ export interface DashboardStats {
 export async function fetchDashboardStats(): Promise<DashboardStats> {
   return apiClient<DashboardStats>('/dashboard/stats', { auth: true });
 }
+
+export interface MemberDashboardStats {
+  production: {
+    deliveredTotal: number;
+    deliveredToday: number;
+    deliveredThisWeek: number;
+    deliveredThisMonth: number;
+    inProgressCount: number;
+    waitingCount: number;
+    pendingCount: number;
+  };
+  thanks: {
+    receivedTotal: number;
+    receivedThisMonth: number;
+    recentCards: Array<{
+      id: string;
+      fromUserId: string;
+      toUserId: string;
+      content: string;
+      category: string;
+      createdAt: string;
+      fromUser: { id: string; name: string };
+    }>;
+  };
+}
+
+export async function fetchMemberDashboardStats(): Promise<MemberDashboardStats> {
+  return apiClient<MemberDashboardStats>('/dashboard/member-stats', { auth: true });
+}
+
+export interface MyProfile {
+  id: string;
+  avatarId: string | null;
+  user: { name: string };
+}
+
+export async function fetchMyProfile(): Promise<MyProfile> {
+  return apiClient<MyProfile>('/members/me', { auth: true });
+}

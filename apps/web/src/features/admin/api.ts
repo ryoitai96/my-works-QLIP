@@ -1,9 +1,13 @@
 import { apiClient } from '../../lib/api-client';
+import type { TenantServiceKey } from '@qlip/shared';
 
 /* ── 型定義 ── */
 
+export type TenantServices = Record<TenantServiceKey, boolean>;
+
 export interface TenantSummary {
   id: string;
+  tenantCode: string;
   name: string;
   industry: string | null;
   isActive: boolean;
@@ -13,6 +17,7 @@ export interface TenantSummary {
 
 export interface TenantDetail {
   id: string;
+  tenantCode: string;
   name: string;
   industry: string | null;
   isActive: boolean;
@@ -26,6 +31,7 @@ export interface TenantDetail {
   }[];
   users: {
     id: string;
+    userCode: string;
     name: string;
     email: string;
     role: string;
@@ -37,23 +43,25 @@ export interface TenantDetail {
 
 export interface UserSummary {
   id: string;
+  userCode: string;
   name: string;
   email: string;
   role: string;
   isActive: boolean;
   createdAt: string;
-  tenant: { id: string; name: string } | null;
+  tenant: { id: string; tenantCode: string; name: string } | null;
 }
 
 export interface UserDetail {
   id: string;
+  userCode: string;
   name: string;
   email: string;
   role: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  tenant: { id: string; name: string } | null;
+  tenant: { id: string; tenantCode: string; name: string } | null;
   site: { id: string; name: string; siteType: string } | null;
   member: {
     id: string;
@@ -80,4 +88,21 @@ export function fetchUsers() {
 
 export function fetchUserById(id: string) {
   return apiClient<UserDetail>(`/admin/users/${id}`, { auth: true });
+}
+
+export function fetchTenantServices(tenantId: string) {
+  return apiClient<TenantServices>(`/admin/tenants/${tenantId}/services`, {
+    auth: true,
+  });
+}
+
+export function updateTenantServices(
+  tenantId: string,
+  data: Partial<TenantServices>,
+) {
+  return apiClient<TenantServices>(`/admin/tenants/${tenantId}/services`, {
+    auth: true,
+    method: 'PATCH',
+    body: data,
+  });
 }

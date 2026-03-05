@@ -1,1 +1,96 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap");
+
+/* ── Base ────────────────────────────────────── */
+
+html {
+  font-family: "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ── Component utilities ─────────────────────── */
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-[#0077c7] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#005fa3] active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-50 active:scale-[0.98];
+  }
+
+  .form-input {
+    @apply block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 ring-offset-2 focus:border-[#0077c7] focus:outline-none focus:ring-2 focus:ring-[#0077c7]/30;
+  }
+
+  .modal-overlay {
+    @apply fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px];
+  }
+
+  .modal-panel {
+    @apply rounded-xl bg-white shadow-2xl ring-1 ring-gray-200;
+  }
+
+  .card {
+    @apply rounded-xl border border-gray-200 bg-white shadow-sm;
+  }
+
+  .page-title {
+    @apply text-xl font-bold text-gray-900;
+  }
+}
+
+/* ── Animations ──────────────────────────────── */
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: pageEnter 0.18s ease-out;
+}
+
+.toast-enter {
+  animation: toastSlideIn 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .toast-enter {
+    animation: none;
+  }
+}

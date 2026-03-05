@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-import { Role, ADMIN_ROLES, type RoleId } from '@qlip/shared';
+import { STAFF_ROLES, type RoleId } from '@qlip/shared';
 import { authStore } from '../features/auth/auth-store';
 
 export function HeroCta() {
@@ -19,8 +19,7 @@ export function HeroCta() {
       if (user) {
         const role = user.role as RoleId;
         setIsStaff(
-          (ADMIN_ROLES as readonly string[]).includes(role) ||
-            role === Role.JOB_COACH,
+          (STAFF_ROLES as readonly string[]).includes(role),
         );
       }
     }
@@ -43,7 +42,7 @@ export function HeroCta() {
   return (
     <Link
       href={href}
-      className="inline-block rounded-lg bg-blue-600 px-8 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      className="inline-block rounded-lg bg-[#ffc000] px-8 py-3 text-base font-semibold text-gray-900 shadow-lg shadow-[#ffc000]/25 transition-all hover:bg-[#e6ad00] hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#ffc000]/40 focus:ring-offset-2 active:scale-[0.98]"
     >
       {label}
     </Link>

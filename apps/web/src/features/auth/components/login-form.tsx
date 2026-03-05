@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 
-import { Role, ADMIN_ROLES, type RoleId } from '@qlip/shared';
+import { Role, STAFF_ROLES, type RoleId } from '@qlip/shared';
 import { ApiClientError } from '../../../lib/api-client';
 import { login } from '../api';
 import { authStore } from '../auth-store';
@@ -34,9 +34,19 @@ export function LoginForm({ email, password, onEmailChange, onPasswordChange }: 
 
       const role = user.role as RoleId;
       const isStaff =
-        (ADMIN_ROLES as readonly string[]).includes(role) ||
-        role === Role.JOB_COACH;
-      router.push(isStaff ? '/dashboard' : '/health-check');
+        (STAFF_ROLES as readonly string[]).includes(role);
+
+      let redirectPath: string;
+      if (isStaff) {
+        redirectPath = '/dashboard';
+      } else if (role === Role.CLIENT_HR) {
+        redirectPath = '/client-dashboard';
+      } else if (role === Role.CLIENT_EMPLOYEE) {
+        redirectPath = '/thanks';
+      } else {
+        redirectPath = '/health-check';
+      }
+      router.push(redirectPath);
     } catch (err) {
       if (err instanceof ApiClientError && err.statusCode === 401) {
         setError('メールアドレスまたはパスワードが正しくありません。');
@@ -73,7 +83,7 @@ export function LoginForm({ email, password, onEmailChange, onPasswordChange }: 
           required
           value={email}
           onChange={(e) => onEmailChange(e.target.value)}
-          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 ring-offset-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 ring-offset-2 focus:border-[#ffc000] focus:outline-none focus:ring-2 focus:ring-[#ffc000]/30"
           placeholder="you@example.com"
         />
       </div>
@@ -92,7 +102,7 @@ export function LoginForm({ email, password, onEmailChange, onPasswordChange }: 
           required
           value={password}
           onChange={(e) => onPasswordChange(e.target.value)}
-          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 ring-offset-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 ring-offset-2 focus:border-[#ffc000] focus:outline-none focus:ring-2 focus:ring-[#ffc000]/30"
           placeholder="パスワード"
         />
       </div>
@@ -100,7 +110,7 @@ export function LoginForm({ email, password, onEmailChange, onPasswordChange }: 
       <button
         type="submit"
         disabled={!canSubmit}
-        className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-300"
+        className="w-full rounded-lg bg-[#ffc000] px-4 py-2.5 text-sm font-semibold text-gray-900 transition-all hover:bg-[#e6ad00] focus:outline-none focus:ring-2 focus:ring-[#ffc000]/40 focus:ring-offset-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
       >
         {isLoading ? 'ログイン中...' : 'ログイン'}
       </button>

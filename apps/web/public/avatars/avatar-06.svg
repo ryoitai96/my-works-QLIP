@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- ひよこ (Chick) -->
+  <circle cx="100" cy="100" r="95" fill="#FFD700"/>
+  <!-- Body/Face -->
+  <circle cx="100" cy="105" r="60" fill="#FFF8DC"/>
+  <!-- Hair tuft -->
+  <path d="M95,45 Q100,25 105,45 Q110,30 108,48" fill="#FFD700"/>
+  <!-- Eyes -->
+  <circle cx="78" cy="95" r="9" fill="#333"/>
+  <circle cx="122" cy="95" r="9" fill="#333"/>
+  <circle cx="82" cy="91" r="4" fill="#FFF"/>
+  <circle cx="126" cy="91" r="4" fill="#FFF"/>
+  <!-- Beak -->
+  <polygon points="90,112 100,122 110,112" fill="#FF8C00"/>
+  <!-- Wings -->
+  <ellipse cx="42" cy="115" rx="12" ry="18" fill="#FFD700" transform="rotate(15,42,115)"/>
+  <ellipse cx="158" cy="115" rx="12" ry="18" fill="#FFD700" transform="rotate(-15,158,115)"/>
+  <!-- Blush -->
+  <circle cx="60" cy="110" r="8" fill="#FF9999" opacity="0.35"/>
+  <circle cx="140" cy="110" r="8" fill="#FF9999" opacity="0.35"/>
+</svg>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- うさぎ (Rabbit) -->
+  <circle cx="100" cy="100" r="95" fill="#DDA0DD"/>
+  <!-- Ears -->
+  <ellipse cx="72" cy="30" rx="14" ry="38" fill="#FFF0F5"/>
+  <ellipse cx="128" cy="30" rx="14" ry="38" fill="#FFF0F5"/>
+  <ellipse cx="72" cy="30" rx="8" ry="28" fill="#FFB6C1"/>
+  <ellipse cx="128" cy="30" rx="8" ry="28" fill="#FFB6C1"/>
+  <!-- Face -->
+  <circle cx="100" cy="110" r="58" fill="#FFF0F5"/>
+  <!-- Eyes -->
+  <ellipse cx="78" cy="100" rx="9" ry="11" fill="#333"/>
+  <ellipse cx="122" cy="100" rx="9" ry="11" fill="#333"/>
+  <circle cx="82" cy="96" r="4" fill="#FFF"/>
+  <circle cx="126" cy="96" r="4" fill="#FFF"/>
+  <!-- Nose -->
+  <ellipse cx="100" cy="118" rx="4" ry="3" fill="#FF69B4"/>
+  <!-- Mouth -->
+  <path d="M93,123 L100,128 L107,123" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Blush -->
+  <circle cx="62" cy="115" r="9" fill="#FF69B4" opacity="0.25"/>
+  <circle cx="138" cy="115" r="9" fill="#FF69B4" opacity="0.25"/>
+</svg>

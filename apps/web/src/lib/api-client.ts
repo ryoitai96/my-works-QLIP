@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3100/api';
 
 export class ApiClientError extends Error {
   constructor(
@@ -48,4 +48,48 @@ export async function apiClient<T>(
   const text = await response.text();
   if (!text) return null as T;
   return JSON.parse(text) as T;
+}
+
+export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  const headers = new Headers();
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('qlip_access_token');
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const message =
+      typeof data.message === 'string' ? data.message : response.statusText;
+    throw new ApiClientError(response.status, message);
+  }
+
+  const text = await response.text();
+  if (!text) return null as T;
+  return JSON.parse(text) as T;
+}
+
+export async function apiDownload(path: string): Promise<Blob> {
+  const headers = new Headers();
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('qlip_access_token');
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, { headers });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const message =
+      typeof data.message === 'string' ? data.message : response.statusText;
+    throw new ApiClientError(response.status, message);
+  }
+
+  return response.blob();
 }

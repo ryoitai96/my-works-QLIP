@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { fetchDashboardStats, type DashboardStats } from '../api';
 import { authStore } from '../../auth/auth-store';
-import { isAdminRole } from '../../auth/role-check';
+import { isStaffRole, isMemberRole } from '../../auth/role-check';
 import { StatCard } from './stat-card';
+import { MemberDashboardContent } from './member-dashboard-content';
 
 const SITE_TYPE_LABELS: Record<string, string> = {
   flower_lab: 'フラワーラボ',
@@ -24,12 +25,21 @@ export function DashboardPageContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const user = authStore.getUser();
-  const hasPermission = user?.role && isAdminRole(user.role);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!hasPermission) {
+    setMounted(true);
+  }, []);
+
+  const user = mounted ? authStore.getUser() : null;
+  const userRole = user?.role;
+  const isStaff = userRole ? isStaffRole(userRole) : false;
+  const isMember = userRole ? isMemberRole(userRole) : false;
+  const hasPermission = isStaff || isMember;
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (!isStaff) {
       setLoading(false);
       return;
     }
@@ -38,7 +48,7 @@ export function DashboardPageContent() {
       .then(setStats)
       .catch((err) => setError(err instanceof Error ? err.message : '読み込みに失敗しました'))
       .finally(() => setLoading(false));
-  }, [hasPermission]);
+  }, [mounted, isStaff]);
 
   if (!hasPermission) {
     return (
@@ -46,6 +56,10 @@ export function DashboardPageContent() {
         <p className="text-amber-800">この機能を利用する権限がありません。管理者にお問い合わせください。</p>
       </div>
     );
+  }
+
+  if (isMember) {
+    return <MemberDashboardContent />;
   }
 
   if (loading) {

@@ -2,9 +2,12 @@ const TOKEN_KEY = 'qlip_access_token';
 const USER_KEY = 'qlip_user';
 
 export interface UserInfo {
+  id?: string;
   name: string;
   role: string;
   email: string;
+  tenantName?: string | null;
+  avatarId?: string | null;
 }
 
 export const authStore = {

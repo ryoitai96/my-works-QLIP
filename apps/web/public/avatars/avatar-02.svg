@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- いぬ (Dog) -->
+  <circle cx="100" cy="100" r="95" fill="#87CEEB"/>
+  <!-- Ears -->
+  <ellipse cx="45" cy="60" rx="22" ry="35" fill="#8B4513" transform="rotate(-15,45,60)"/>
+  <ellipse cx="155" cy="60" rx="22" ry="35" fill="#8B4513" transform="rotate(15,155,60)"/>
+  <!-- Face -->
+  <circle cx="100" cy="105" r="58" fill="#F5DEB3"/>
+  <!-- Eyes -->
+  <circle cx="78" cy="92" r="10" fill="#333"/>
+  <circle cx="122" cy="92" r="10" fill="#333"/>
+  <circle cx="82" cy="88" r="4" fill="#FFF"/>
+  <circle cx="126" cy="88" r="4" fill="#FFF"/>
+  <!-- Nose -->
+  <ellipse cx="100" cy="112" rx="8" ry="6" fill="#333"/>
+  <ellipse cx="100" cy="110" rx="3" ry="2" fill="#666"/>
+  <!-- Mouth -->
+  <path d="M88,120 Q100,132 112,120" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+  <!-- Tongue -->
+  <ellipse cx="100" cy="130" rx="6" ry="8" fill="#FF6B6B"/>
+  <!-- Blush -->
+  <circle cx="62" cy="108" r="8" fill="#FF9999" opacity="0.4"/>
+  <circle cx="138" cy="108" r="8" fill="#FF9999" opacity="0.4"/>
+</svg>

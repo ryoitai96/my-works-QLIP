@@ -8,13 +8,13 @@ interface DemoAccount {
 
 const demoGroups: { title: string; accounts: DemoAccount[] }[] = [
   {
-    title: 'スーパーアドミン',
+    title: 'MW管理者',
     accounts: [
       { label: '管理太郎', email: 'admin@sann.co.jp', password: 'password123' },
     ],
   },
   {
-    title: 'ジョブコーチ',
+    title: '支援員',
     accounts: [
       { label: '指導花子', email: 'coach@sann.co.jp', password: 'password123' },
     ],
@@ -22,8 +22,29 @@ const demoGroups: { title: string; accounts: DemoAccount[] }[] = [
   {
     title: 'メンバー',
     accounts: [
-      { label: '田中一郎', email: 'tanaka@sann.co.jp', password: 'password123' },
-      { label: '鈴木次郎', email: 'suzuki@sann.co.jp', password: 'password123' },
+      { label: '田中一郎', email: 'member1@sann.co.jp', password: 'password123' },
+      { label: '鈴木次郎', email: 'member2@sann.co.jp', password: 'password123' },
+    ],
+  },
+  {
+    title: '株式会社A',
+    accounts: [
+      { label: '佐藤美咲（人事）', email: 'hr@client.co.jp', password: 'password123' },
+      { label: '高橋健太（社員）', email: 'emp@client.co.jp', password: 'password123' },
+    ],
+  },
+  {
+    title: '株式会社B',
+    accounts: [
+      { label: '山田花子（人事）', email: 'hr@companyb.co.jp', password: 'password123' },
+      { label: '中村大輔（社員）', email: 'emp@companyb.co.jp', password: 'password123' },
+    ],
+  },
+  {
+    title: '株式会社C',
+    accounts: [
+      { label: '小林真由美（人事）', email: 'hr@companyc.co.jp', password: 'password123' },
+      { label: '渡辺翔太（社員）', email: 'emp@companyc.co.jp', password: 'password123' },
     ],
   },
 ];
@@ -40,7 +61,7 @@ export function DemoLoginButtons({ onSelect }: DemoLoginButtonsProps) {
           <div className="w-full border-t border-gray-200" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-gray-50 px-3 text-gray-500">デモアカウント</span>
+          <span className="bg-white px-3 text-gray-500">デモアカウント</span>
         </div>
       </div>
 
@@ -56,7 +77,7 @@ export function DemoLoginButtons({ onSelect }: DemoLoginButtonsProps) {
                   key={account.email}
                   type="button"
                   onClick={() => onSelect(account.email, account.password)}
-                  className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#ffc000]/40 focus:ring-offset-2"
                 >
                   {account.label}
                 </button>

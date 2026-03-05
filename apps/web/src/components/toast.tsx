@@ -34,7 +34,7 @@ function ToastItem({
 
   return (
     <div
-      className={`${bgColor} flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg`}
+      className={`${bgColor} toast-enter flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg`}
       role="status"
     >
       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-bold">

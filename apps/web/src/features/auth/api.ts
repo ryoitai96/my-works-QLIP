@@ -7,7 +7,14 @@ interface LoginRequest {
 
 interface LoginResponse {
   accessToken: string;
-  user: { name: string; role: string; email: string };
+  user: {
+    id: string;
+    name: string;
+    role: string;
+    email: string;
+    tenantName: string | null;
+    avatarId: string | null;
+  };
 }
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {

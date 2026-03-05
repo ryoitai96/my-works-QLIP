@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- くま (Bear) -->
+  <circle cx="100" cy="100" r="95" fill="#F4A460"/>
+  <!-- Ears -->
+  <circle cx="50" cy="50" r="22" fill="#D2691E"/>
+  <circle cx="150" cy="50" r="22" fill="#D2691E"/>
+  <circle cx="50" cy="50" r="12" fill="#F4A460"/>
+  <circle cx="150" cy="50" r="12" fill="#F4A460"/>
+  <!-- Face -->
+  <circle cx="100" cy="108" r="58" fill="#FFDEAD"/>
+  <!-- Eyes -->
+  <circle cx="78" cy="95" r="8" fill="#333"/>
+  <circle cx="122" cy="95" r="8" fill="#333"/>
+  <circle cx="81" cy="92" r="3" fill="#FFF"/>
+  <circle cx="125" cy="92" r="3" fill="#FFF"/>
+  <!-- Muzzle -->
+  <ellipse cx="100" cy="118" rx="20" ry="15" fill="#FFF8DC"/>
+  <!-- Nose -->
+  <ellipse cx="100" cy="113" rx="6" ry="4" fill="#333"/>
+  <!-- Mouth -->
+  <path d="M92,122 Q100,130 108,122" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+  <!-- Blush -->
+  <circle cx="60" cy="112" r="9" fill="#FF9999" opacity="0.35"/>
+  <circle cx="140" cy="112" r="9" fill="#FF9999" opacity="0.35"/>
+</svg>

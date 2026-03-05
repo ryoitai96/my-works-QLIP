@@ -97,7 +97,7 @@ export function UserDetailContent({ userId }: UserDetailContentProps) {
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#ffc000] text-lg font-semibold text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#ffc000] text-lg font-semibold text-gray-900">
               {user.name.charAt(0)}
             </div>
             <div>
@@ -118,6 +118,12 @@ export function UserDetailContent({ userId }: UserDetailContentProps) {
 
         <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
           <div>
+            <dt className="text-gray-500">個人ID</dt>
+            <dd className="mt-0.5 font-mono text-sm font-medium text-gray-900">
+              {user.userCode}
+            </dd>
+          </div>
+          <div>
             <dt className="text-gray-500">ロール</dt>
             <dd className="mt-0.5 font-medium text-gray-900">
               {ROLE_LABELS[user.role as RoleId] ?? user.role}
@@ -129,7 +135,7 @@ export function UserDetailContent({ userId }: UserDetailContentProps) {
               {user.tenant ? (
                 <Link
                   href={`/admin/tenants/${user.tenant.id}`}
-                  className="text-blue-600 hover:underline"
+                  className="text-[#b38600] hover:underline"
                 >
                   {user.tenant.name}
                 </Link>

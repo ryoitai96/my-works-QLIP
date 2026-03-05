@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- りす (Squirrel) -->
+  <circle cx="100" cy="100" r="95" fill="#DEB887"/>
+  <!-- Ears -->
+  <ellipse cx="55" cy="50" rx="12" ry="18" fill="#CD853F" transform="rotate(-10,55,50)"/>
+  <ellipse cx="145" cy="50" rx="12" ry="18" fill="#CD853F" transform="rotate(10,145,50)"/>
+  <ellipse cx="55" cy="50" rx="6" ry="10" fill="#FFE4B5" transform="rotate(-10,55,50)"/>
+  <ellipse cx="145" cy="50" rx="6" ry="10" fill="#FFE4B5" transform="rotate(10,145,50)"/>
+  <!-- Face -->
+  <circle cx="100" cy="105" r="55" fill="#FAEBD7"/>
+  <!-- Eyes -->
+  <circle cx="78" cy="95" r="9" fill="#333"/>
+  <circle cx="122" cy="95" r="9" fill="#333"/>
+  <circle cx="82" cy="91" r="4" fill="#FFF"/>
+  <circle cx="126" cy="91" r="4" fill="#FFF"/>
+  <!-- Nose -->
+  <circle cx="100" cy="112" r="4" fill="#333"/>
+  <!-- Mouth -->
+  <path d="M92,118 Q96,124 100,118 Q104,124 108,118" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Cheek stripes -->
+  <line x1="55" y1="105" x2="68" y2="108" stroke="#CD853F" stroke-width="2" opacity="0.4"/>
+  <line x1="55" y1="112" x2="68" y2="114" stroke="#CD853F" stroke-width="2" opacity="0.4"/>
+  <line x1="145" y1="105" x2="132" y2="108" stroke="#CD853F" stroke-width="2" opacity="0.4"/>
+  <line x1="145" y1="112" x2="132" y2="114" stroke="#CD853F" stroke-width="2" opacity="0.4"/>
+  <!-- Blush -->
+  <circle cx="65" cy="112" r="7" fill="#FF9999" opacity="0.3"/>
+  <circle cx="135" cy="112" r="7" fill="#FF9999" opacity="0.3"/>
+</svg>

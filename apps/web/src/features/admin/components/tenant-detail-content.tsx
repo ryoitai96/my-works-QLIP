@@ -96,7 +96,25 @@ export function TenantDetailContent({ tenantId }: TenantDetailContentProps) {
             {tenant.isActive ? '有効' : '無効'}
           </span>
         </div>
+        <div className="mb-4">
+          <Link
+            href={`/admin/tenants/${tenantId}/services`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+            </svg>
+            サービス設定
+          </Link>
+        </div>
+
         <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+          <div>
+            <dt className="text-gray-500">企業ID</dt>
+            <dd className="mt-0.5 font-mono text-sm font-medium text-gray-900">
+              {tenant.tenantCode}
+            </dd>
+          </div>
           <div>
             <dt className="text-gray-500">業種</dt>
             <dd className="mt-0.5 font-medium text-gray-900">
@@ -178,6 +196,7 @@ export function TenantDetailContent({ tenantId }: TenantDetailContentProps) {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-gray-50 text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-5 py-2.5">個人ID</th>
                 <th className="px-5 py-2.5">氏名</th>
                 <th className="px-5 py-2.5">メール</th>
                 <th className="px-5 py-2.5">ロール</th>
@@ -191,6 +210,9 @@ export function TenantDetailContent({ tenantId }: TenantDetailContentProps) {
                   onClick={() => router.push(`/admin/users/${u.id}`)}
                   className="cursor-pointer transition-colors hover:bg-gray-50"
                 >
+                  <td className="px-5 py-3 font-mono text-xs text-gray-500">
+                    {u.userCode}
+                  </td>
                   <td className="px-5 py-3 font-medium text-gray-900">
                     {u.name}
                   </td>
@@ -214,7 +236,7 @@ export function TenantDetailContent({ tenantId }: TenantDetailContentProps) {
               {tenant.users.length === 0 && (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-5 py-8 text-center text-gray-400"
                   >
                     所属ユーザーはいません

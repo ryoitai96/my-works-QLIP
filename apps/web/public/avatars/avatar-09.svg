@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- こあら (Koala) -->
+  <circle cx="100" cy="100" r="95" fill="#C0C0C0"/>
+  <!-- Ears -->
+  <circle cx="45" cy="58" r="25" fill="#808080"/>
+  <circle cx="155" cy="58" r="25" fill="#808080"/>
+  <circle cx="45" cy="58" r="15" fill="#FFB6C1"/>
+  <circle cx="155" cy="58" r="15" fill="#FFB6C1"/>
+  <!-- Face -->
+  <circle cx="100" cy="108" r="58" fill="#D3D3D3"/>
+  <!-- Eyes -->
+  <circle cx="78" cy="95" r="8" fill="#333"/>
+  <circle cx="122" cy="95" r="8" fill="#333"/>
+  <circle cx="81" cy="92" r="3" fill="#FFF"/>
+  <circle cx="125" cy="92" r="3" fill="#FFF"/>
+  <!-- Nose -->
+  <ellipse cx="100" cy="112" rx="10" ry="7" fill="#555"/>
+  <ellipse cx="100" cy="110" rx="4" ry="2" fill="#777"/>
+  <!-- Mouth -->
+  <path d="M92,122 Q100,128 108,122" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+  <!-- Blush -->
+  <circle cx="62" cy="115" r="8" fill="#FF9999" opacity="0.3"/>
+  <circle cx="138" cy="115" r="8" fill="#FF9999" opacity="0.3"/>
+</svg>
