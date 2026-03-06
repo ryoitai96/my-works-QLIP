@@ -12,10 +12,8 @@ export default async function TenantDetailPage({
 }) {
   const { id } = await params;
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#ffc000]/5 to-gray-50">
-      <div className="mx-auto max-w-5xl px-6 py-8">
-        <TenantDetailContent tenantId={id} />
-      </div>
+    <div className="mx-auto max-w-5xl">
+      <TenantDetailContent tenantId={id} />
     </div>
   );
 }

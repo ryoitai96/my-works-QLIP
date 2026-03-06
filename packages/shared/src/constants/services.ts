@@ -9,6 +9,7 @@ export const TenantService = {
   MESSAGE: 'message',
   THANKS: 'thanks',
   FLOWER_ORDER: 'flower_order',
+  SOS: 'sos',
 } as const;
 
 export type TenantServiceKey = (typeof TenantService)[keyof typeof TenantService];
@@ -21,6 +22,7 @@ export const TENANT_SERVICE_LABELS: Record<TenantServiceKey, string> = {
   message: 'メッセージ',
   thanks: 'サンクスカード',
   flower_order: 'フラワーギフト',
+  sos: 'SOS通報',
 };
 
 export const TENANT_SERVICE_KEYS: TenantServiceKey[] = Object.values(TenantService);
@@ -33,4 +35,5 @@ export const DEFAULT_TENANT_SERVICES: Record<TenantServiceKey, boolean> = {
   message: true,
   thanks: true,
   flower_order: true,
+  sos: true,
 };

@@ -64,6 +64,18 @@ export async function updateSite(
   });
 }
 
+export async function createSite(data: {
+  name: string;
+  siteType: string;
+  address?: string;
+}): Promise<SiteInfo> {
+  return apiClient<SiteInfo>('/settings/sites', {
+    method: 'POST',
+    body: data,
+    auth: true,
+  });
+}
+
 export async function fetchTenant(): Promise<TenantInfo> {
   return apiClient<TenantInfo>('/settings/tenant', { auth: true });
 }

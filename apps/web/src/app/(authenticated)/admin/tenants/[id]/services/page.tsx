@@ -8,7 +8,7 @@ export default async function TenantServicesPage({
   const { id } = await params;
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-8">
+    <div className="mx-auto max-w-3xl">
       <TenantServicesContent tenantId={id} />
     </div>
   );

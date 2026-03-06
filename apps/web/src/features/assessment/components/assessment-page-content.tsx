@@ -7,6 +7,7 @@ import { authStore } from '../../auth/auth-store';
 import { type AssessmentData, fetchLatestAssessment } from '../api';
 import { AssessmentForm } from './assessment-form';
 import { PentagonChart } from './pentagon-chart';
+import { AssessmentHistory } from './assessment-history';
 
 export function AssessmentPageContent() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export function AssessmentPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
   const loadLatest = useCallback(async () => {
@@ -191,13 +193,29 @@ export function AssessmentPageContent() {
             })}
           </div>
 
-          {/* Retake button */}
-          <button
-            onClick={() => setShowForm(true)}
-            className="w-full rounded-xl border-2 border-[#ffc000] bg-white px-6 py-3 text-base font-semibold text-gray-900 transition-colors hover:bg-[#ffc000]/5"
-          >
-            もう一度回答する
-          </button>
+          {/* Action buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex-1 rounded-xl border-2 border-[#ffc000] bg-white px-6 py-3 text-base font-semibold text-gray-900 transition-colors hover:bg-[#ffc000]/5"
+            >
+              もう一度回答する
+            </button>
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="rounded-xl border-2 border-gray-200 bg-white px-6 py-3 text-base font-semibold text-gray-600 transition-colors hover:bg-gray-50"
+            >
+              {showHistory ? '履歴を閉じる' : '履歴を見る'}
+            </button>
+          </div>
+
+          {/* History section */}
+          {showHistory && (
+            <div className="space-y-3">
+              <h3 className="text-lg font-bold text-gray-900">アセスメント履歴</h3>
+              <AssessmentHistory />
+            </div>
+          )}
         </>
       )}
     </div>

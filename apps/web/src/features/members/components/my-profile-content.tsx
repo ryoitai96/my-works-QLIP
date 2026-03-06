@@ -4,9 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ApiClientError } from '../../../lib/api-client';
 import { authStore } from '../../auth/auth-store';
-import { type MemberDetail, fetchMyProfile, updateMyProfile } from '../api';
+import { type MemberDetail, type OcrResult, fetchMyProfile, updateMyProfile } from '../api';
 import { MemberAvatar } from '../../../components/member-avatar';
 import { AvatarPicker } from '../../../components/avatar-picker';
+import { CertificateOcrUploader } from './certificate-ocr-uploader';
+import { CharacteristicProfileCard } from '../../characteristic-profile/components/characteristic-profile-card';
 
 const STATUS_LABELS: Record<string, string> = {
   active: '在籍',
@@ -63,6 +65,13 @@ export function MyProfileContent() {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editAvatarId, setEditAvatarId] = useState('avatar-01');
+  const [editDisabilityType, setEditDisabilityType] = useState('');
+  const [editDisabilityGrade, setEditDisabilityGrade] = useState('');
+  const [editHandbookType, setEditHandbookType] = useState('');
+  const [editHandbookIssuedAt, setEditHandbookIssuedAt] = useState('');
+  const [editHandbookExpiresAt, setEditHandbookExpiresAt] = useState('');
+  const [editDateOfBirth, setEditDateOfBirth] = useState('');
+  const [ocrFilledFields, setOcrFilledFields] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
@@ -92,19 +101,68 @@ export function MyProfileContent() {
     load();
   }, [load]);
 
+  const formatDateForInput = (v: string | null): string => {
+    if (!v) return '';
+    return new Date(v).toISOString().split('T')[0];
+  };
+
   const startEdit = () => {
     if (!member) return;
     setEditName(member.user.name);
     setEditAvatarId(member.avatarId ?? 'avatar-01');
+    setEditDisabilityType(member.disabilityType ?? '');
+    setEditDisabilityGrade(member.disabilityGrade ?? '');
+    setEditHandbookType(member.handbookType ?? '');
+    setEditHandbookIssuedAt(formatDateForInput(member.handbookIssuedAt));
+    setEditHandbookExpiresAt(formatDateForInput(member.handbookExpiresAt));
+    setEditDateOfBirth(formatDateForInput(member.dateOfBirth));
+    setOcrFilledFields(new Set());
     setIsEditing(true);
     setSaveError('');
+  };
+
+  const handleOcrResult = (result: OcrResult) => {
+    const filled = new Set<string>();
+    const setters: Record<string, (v: string) => void> = {
+      disabilityType: setEditDisabilityType,
+      disabilityGrade: setEditDisabilityGrade,
+      handbookType: setEditHandbookType,
+      handbookIssuedAt: setEditHandbookIssuedAt,
+      handbookExpiresAt: setEditHandbookExpiresAt,
+      dateOfBirth: setEditDateOfBirth,
+    };
+    const currentValues: Record<string, string> = {
+      disabilityType: editDisabilityType,
+      disabilityGrade: editDisabilityGrade,
+      handbookType: editHandbookType,
+      handbookIssuedAt: editHandbookIssuedAt,
+      handbookExpiresAt: editHandbookExpiresAt,
+      dateOfBirth: editDateOfBirth,
+    };
+
+    for (const [key, value] of Object.entries(result)) {
+      if (value && !currentValues[key] && setters[key]) {
+        setters[key](value);
+        filled.add(key);
+      }
+    }
+    setOcrFilledFields((prev) => new Set([...prev, ...filled]));
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     setSaveError('');
     try {
-      await updateMyProfile({ avatarId: editAvatarId, name: editName });
+      await updateMyProfile({
+        avatarId: editAvatarId,
+        name: editName,
+        disabilityType: editDisabilityType || undefined,
+        disabilityGrade: editDisabilityGrade || undefined,
+        handbookType: editHandbookType || undefined,
+        handbookIssuedAt: editHandbookIssuedAt || undefined,
+        handbookExpiresAt: editHandbookExpiresAt || undefined,
+        dateOfBirth: editDateOfBirth || undefined,
+      });
       setIsEditing(false);
       await load();
     } catch (err) {
@@ -199,6 +257,18 @@ export function MyProfileContent() {
                 className={inputClass}
               />
             </div>
+            <div className="max-w-sm">
+              <label className="mb-1 block text-xs font-medium text-gray-500">
+                生年月日
+                {ocrFilledFields.has('dateOfBirth') && <span className="ml-2 inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">手帳から自動入力</span>}
+              </label>
+              <input
+                type="date"
+                value={editDateOfBirth}
+                onChange={(e) => setEditDateOfBirth(e.target.value)}
+                className={inputClass}
+              />
+            </div>
           </div>
         ) : (
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -226,20 +296,105 @@ export function MyProfileContent() {
       {/* 障害情報カード */}
       <div className="rounded-xl border bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-lg font-semibold text-gray-900">障害情報</h2>
-        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <DlItem
-            label="障害種別"
-            value={member.disabilityType ? (DISABILITY_TYPE_LABELS[member.disabilityType] ?? member.disabilityType) : '—'}
-          />
-          <DlItem label="障害等級" value={member.disabilityGrade ?? '—'} />
-          <DlItem
-            label="手帳種類"
-            value={member.handbookType ? (HANDBOOK_TYPE_LABELS[member.handbookType] ?? member.handbookType) : '—'}
-          />
-          <DlItem label="手帳取得日" value={formatDate(member.handbookIssuedAt)} />
-          <DlItem label="有効期限" value={formatDate(member.handbookExpiresAt)} />
-        </dl>
+
+        {isEditing ? (
+          <div className="space-y-5">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-500">障害者手帳OCR読み取り</label>
+              <CertificateOcrUploader onOcrResult={handleOcrResult} />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-500">
+                  障害種別
+                  {ocrFilledFields.has('disabilityType') && <span className="ml-2 inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">手帳から自動入力</span>}
+                </label>
+                <select
+                  value={editDisabilityType}
+                  onChange={(e) => setEditDisabilityType(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">選択してください</option>
+                  <option value="physical">身体障害</option>
+                  <option value="intellectual">知的障害</option>
+                  <option value="mental">精神障害</option>
+                  <option value="developmental">発達障害</option>
+                  <option value="multiple">重複障害</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-500">
+                  障害等級
+                  {ocrFilledFields.has('disabilityGrade') && <span className="ml-2 inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">手帳から自動入力</span>}
+                </label>
+                <input
+                  type="text"
+                  value={editDisabilityGrade}
+                  onChange={(e) => setEditDisabilityGrade(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-500">
+                  手帳種類
+                  {ocrFilledFields.has('handbookType') && <span className="ml-2 inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">手帳から自動入力</span>}
+                </label>
+                <select
+                  value={editHandbookType}
+                  onChange={(e) => setEditHandbookType(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">選択してください</option>
+                  <option value="physical">身体障害者手帳</option>
+                  <option value="rehabilitation">療育手帳</option>
+                  <option value="mental_health">精神障害者保健福祉手帳</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-500">
+                  手帳取得日
+                  {ocrFilledFields.has('handbookIssuedAt') && <span className="ml-2 inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">手帳から自動入力</span>}
+                </label>
+                <input
+                  type="date"
+                  value={editHandbookIssuedAt}
+                  onChange={(e) => setEditHandbookIssuedAt(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-500">
+                  有効期限
+                  {ocrFilledFields.has('handbookExpiresAt') && <span className="ml-2 inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">手帳から自動入力</span>}
+                </label>
+                <input
+                  type="date"
+                  value={editHandbookExpiresAt}
+                  onChange={(e) => setEditHandbookExpiresAt(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <DlItem
+              label="障害種別"
+              value={member.disabilityType ? (DISABILITY_TYPE_LABELS[member.disabilityType] ?? member.disabilityType) : '—'}
+            />
+            <DlItem label="障害等級" value={member.disabilityGrade ?? '—'} />
+            <DlItem
+              label="手帳種類"
+              value={member.handbookType ? (HANDBOOK_TYPE_LABELS[member.handbookType] ?? member.handbookType) : '—'}
+            />
+            <DlItem label="手帳取得日" value={formatDate(member.handbookIssuedAt)} />
+            <DlItem label="有効期限" value={formatDate(member.handbookExpiresAt)} />
+          </dl>
+        )}
       </div>
+
+      {/* 特性プロファイルカード（閲覧のみ） */}
+      <CharacteristicProfileCard memberId={member.id} readonly />
     </div>
   );
 }

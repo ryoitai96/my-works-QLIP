@@ -6,4 +6,5 @@ export class UpdateTenantServicesDto {
   message?: boolean;
   thanks?: boolean;
   flower_order?: boolean;
+  sos?: boolean;
 }

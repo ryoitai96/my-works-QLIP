@@ -14,6 +14,15 @@ interface SubmitHealthCheckDto {
   mealBreakfast?: boolean;
   mealLunch?: boolean;
   mealDinner?: boolean;
+  moodComment?: string;
+  conditionComment?: string;
+  bedTime?: string;
+  wakeTime?: string;
+  appetite?: string;
+  medicationTaken?: string;
+  medicationNote?: string;
+  prnMedicationUsed?: boolean;
+  prnMedicationEffect?: string;
   note?: string;
 }
 
@@ -104,6 +113,15 @@ export class HealthCheckService {
         mealBreakfast: dto.mealBreakfast ?? null,
         mealLunch: dto.mealLunch ?? null,
         mealDinner: dto.mealDinner ?? null,
+        moodComment: dto.moodComment ?? null,
+        conditionComment: dto.conditionComment ?? null,
+        bedTime: dto.bedTime ?? null,
+        wakeTime: dto.wakeTime ?? null,
+        appetite: dto.appetite ?? null,
+        medicationTaken: dto.medicationTaken ?? null,
+        medicationNote: dto.medicationNote ?? null,
+        prnMedicationUsed: dto.prnMedicationUsed ?? null,
+        prnMedicationEffect: dto.prnMedicationEffect ?? null,
         note: dto.note ?? null,
         streakDays,
       },
@@ -116,6 +134,15 @@ export class HealthCheckService {
         mealBreakfast: dto.mealBreakfast ?? null,
         mealLunch: dto.mealLunch ?? null,
         mealDinner: dto.mealDinner ?? null,
+        moodComment: dto.moodComment ?? null,
+        conditionComment: dto.conditionComment ?? null,
+        bedTime: dto.bedTime ?? null,
+        wakeTime: dto.wakeTime ?? null,
+        appetite: dto.appetite ?? null,
+        medicationTaken: dto.medicationTaken ?? null,
+        medicationNote: dto.medicationNote ?? null,
+        prnMedicationUsed: dto.prnMedicationUsed ?? null,
+        prnMedicationEffect: dto.prnMedicationEffect ?? null,
         note: dto.note ?? null,
       },
     });
@@ -143,6 +170,131 @@ export class HealthCheckService {
           memberId: member.id,
           recordDate: today,
         },
+      },
+    });
+  }
+
+  /** チーム概観: 全メンバーの本日バイタル一覧 */
+  async getTeamOverview(tenantId: string, siteId?: string) {
+    const where: any = { tenantId, status: 'active' };
+    if (siteId) where.siteId = siteId;
+
+    const members = await this.prisma.member.findMany({
+      where,
+      include: {
+        user: { select: { id: true, name: true } },
+        site: { select: { name: true } },
+      },
+      orderBy: { user: { name: 'asc' } },
+    });
+
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const todayScores = await this.prisma.vitalScore.findMany({
+      where: {
+        memberId: { in: members.map((m) => m.id) },
+        recordDate: today,
+      },
+    });
+
+    const scoreMap = new Map(todayScores.map((s) => [s.memberId, s]));
+
+    return members.map((m) => {
+      const score = scoreMap.get(m.id);
+      const avg = score
+        ? Math.round(((score.mood + score.sleep + score.condition) / 3) * 10) / 10
+        : null;
+
+      let status: 'good' | 'caution' | 'warning' | 'not_submitted' = 'not_submitted';
+      if (score) {
+        if (avg !== null && avg >= 3.5) status = 'good';
+        else if (avg !== null && avg >= 2.5) status = 'caution';
+        else status = 'warning';
+      }
+
+      // Manual alert overrides
+      if (m.alertLevel === 'CRITICAL') status = 'warning';
+      else if (m.alertLevel === 'WARNING') status = 'caution';
+
+      return {
+        memberId: m.id,
+        userId: m.user.id,
+        name: m.user.name,
+        avatarId: m.avatarId,
+        siteName: m.site.name,
+        status,
+        alertLevel: m.alertLevel,
+        alertReason: m.alertReason,
+        vitalScore: score
+          ? {
+              mood: score.mood,
+              sleep: score.sleep,
+              condition: score.condition,
+              average: avg,
+              streakDays: score.streakDays,
+            }
+          : null,
+      };
+    });
+  }
+
+  /** アラート一覧: 閾値以下 or 未入力 or 手動フラグのメンバー */
+  async getAlerts(tenantId: string, siteId?: string) {
+    const overview = await this.getTeamOverview(tenantId, siteId);
+
+    return overview
+      .filter((m) => m.status !== 'good')
+      .map((m) => {
+        const reasons: string[] = [];
+        if (m.status === 'not_submitted') reasons.push('本日未入力');
+        if (m.vitalScore && m.vitalScore.average !== null && m.vitalScore.average < 2.5)
+          reasons.push('バイタルスコアが低い');
+        if (m.alertLevel) reasons.push(`手動: ${m.alertReason ?? m.alertLevel}`);
+
+        return {
+          ...m,
+          alertReasons: reasons,
+          recommendedActions: this.getRecommendedActions(m.status, reasons),
+        };
+      })
+      .sort((a, b) => {
+        const order = { warning: 0, caution: 1, not_submitted: 2, good: 3 };
+        return (order[a.status] ?? 3) - (order[b.status] ?? 3);
+      });
+  }
+
+  private getRecommendedActions(
+    status: string,
+    reasons: string[],
+  ): string[] {
+    const actions: string[] = [];
+    if (status === 'warning') actions.push('本人に直接声がけ');
+    if (status === 'not_submitted') actions.push('入力リマインド');
+    if (reasons.some((r) => r.includes('バイタル'))) actions.push('1on1面談を検討');
+    if (status === 'caution') actions.push('様子を見守る');
+    return actions;
+  }
+
+  /** 手動アラート設定 */
+  async setManualAlert(
+    memberId: string,
+    alertLevel: string | null,
+    alertReason: string | null,
+    setByUserId: string,
+  ) {
+    return this.prisma.member.update({
+      where: { id: memberId },
+      data: {
+        alertLevel,
+        alertReason,
+        alertSetById: alertLevel ? setByUserId : null,
+      },
+      select: {
+        id: true,
+        alertLevel: true,
+        alertReason: true,
+        alertSetById: true,
       },
     });
   }

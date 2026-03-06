@@ -3,10 +3,11 @@
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 
-import { Role, STAFF_ROLES, type RoleId } from '@qlip/shared';
+import type { RoleId } from '@qlip/shared';
 import { ApiClientError } from '../../../lib/api-client';
 import { login } from '../api';
 import { authStore } from '../auth-store';
+import { getRoleHomePath } from '../route-permissions';
 
 interface LoginFormProps {
   email: string;
@@ -32,21 +33,7 @@ export function LoginForm({ email, password, onEmailChange, onPasswordChange }: 
       authStore.setToken(accessToken);
       authStore.setUser(user);
 
-      const role = user.role as RoleId;
-      const isStaff =
-        (STAFF_ROLES as readonly string[]).includes(role);
-
-      let redirectPath: string;
-      if (isStaff) {
-        redirectPath = '/dashboard';
-      } else if (role === Role.CLIENT_HR) {
-        redirectPath = '/client-dashboard';
-      } else if (role === Role.CLIENT_EMPLOYEE) {
-        redirectPath = '/thanks';
-      } else {
-        redirectPath = '/health-check';
-      }
-      router.push(redirectPath);
+      router.push(getRoleHomePath(user.role as RoleId));
     } catch (err) {
       if (err instanceof ApiClientError && err.statusCode === 401) {
         setError('メールアドレスまたはパスワードが正しくありません。');
@@ -110,7 +97,7 @@ export function LoginForm({ email, password, onEmailChange, onPasswordChange }: 
       <button
         type="submit"
         disabled={!canSubmit}
-        className="w-full rounded-lg bg-[#ffc000] px-4 py-2.5 text-sm font-semibold text-gray-900 transition-all hover:bg-[#e6ad00] focus:outline-none focus:ring-2 focus:ring-[#ffc000]/40 focus:ring-offset-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+        className="w-full rounded-lg bg-[#ffc000] px-4 py-2.5 text-sm font-semibold text-gray-900 transition-colors hover:bg-[#e6ac00] focus:outline-none focus:ring-2 focus:ring-[#ffc000] focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-white"
       >
         {isLoading ? 'ログイン中...' : 'ログイン'}
       </button>

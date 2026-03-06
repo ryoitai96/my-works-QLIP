@@ -5,14 +5,25 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { ApiClientError } from '../../../lib/api-client';
 import { authStore } from '../../auth/auth-store';
+import { isStaffRole } from '../../auth/role-check';
 import { type MicroTask, fetchMicroTasks } from '../api';
 import { MicroTaskCard } from './micro-task-card';
+import { MicroTaskRegisterForm } from './micro-task-register-form';
 
 export function MicroTaskList() {
   const router = useRouter();
   const [tasks, setTasks] = useState<MicroTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showRegister, setShowRegister] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const user = mounted ? authStore.getUser() : null;
+  const isStaff = user?.role ? isStaffRole(user.role) : false;
 
   const loadTasks = useCallback(async () => {
     if (!authStore.isAuthenticated()) {
@@ -79,10 +90,34 @@ export function MicroTaskList() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {tasks.map((task) => (
-        <MicroTaskCard key={task.id} task={task} />
-      ))}
+    <div className="space-y-6">
+      {/* Staff: register button */}
+      {isStaff && (
+        <div>
+          {showRegister ? (
+            <MicroTaskRegisterForm
+              onSuccess={() => {
+                setShowRegister(false);
+                loadTasks();
+              }}
+              onCancel={() => setShowRegister(false)}
+            />
+          ) : (
+            <button
+              onClick={() => setShowRegister(true)}
+              className="rounded-xl bg-[#0077c7] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#005fa3]"
+            >
+              + タスク登録
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {tasks.map((task) => (
+          <MicroTaskCard key={task.id} task={task} />
+        ))}
+      </div>
     </div>
   );
 }

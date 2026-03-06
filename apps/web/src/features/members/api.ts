@@ -1,5 +1,16 @@
 import { apiClient, apiUpload, apiDownload } from '../../lib/api-client';
 
+/* ── OCR結果型 ── */
+
+export interface OcrResult {
+  disabilityType?: string;
+  disabilityGrade?: string;
+  handbookType?: string;
+  handbookIssuedAt?: string;
+  handbookExpiresAt?: string;
+  dateOfBirth?: string;
+}
+
 /* ── 型定義 ── */
 
 export interface MemberSummary {
@@ -11,7 +22,7 @@ export interface MemberSummary {
   enrolledAt: string;
   status: string;
   user: { name: string; email: string };
-  site: { name: string };
+  site: { name: string; companyName: string | null; serviceName: string | null };
 }
 
 export interface MemberDetail {
@@ -36,7 +47,7 @@ export interface MemberDetail {
   createdAt: string;
   updatedAt: string;
   user: { name: string; email: string };
-  site: { id: string; name: string };
+  site: { id: string; name: string; companyName: string | null; serviceName: string | null };
   documents: DocumentInfo[];
   assessmentResults: {
     id: string;
@@ -73,6 +84,8 @@ export interface CreateMemberPayload {
   disabilityType?: string;
   disabilityGrade?: string;
   handbookType?: string;
+  handbookIssuedAt?: string;
+  handbookExpiresAt?: string;
   employmentType?: string;
   enrolledAt?: string;
   avatarId?: string;
@@ -109,6 +122,7 @@ export interface DocumentInfo {
 export interface SiteOption {
   id: string;
   name: string;
+  companyName?: string | null;
 }
 
 /* ── API関数 ── */
@@ -164,13 +178,32 @@ export function downloadDocument(memberId: string, docId: string) {
   return apiDownload(`/members/${memberId}/documents/${docId}`);
 }
 
+/* ── OCRアップロード ── */
+
+export function uploadCertificateForOcr(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiUpload<OcrResult>('/members/ocr', formData);
+}
+
 /* ── マイプロフィール（R03メンバー向け） ── */
 
 export function fetchMyProfile() {
   return apiClient<MemberDetail>('/members/me', { auth: true });
 }
 
-export function updateMyProfile(payload: { avatarId?: string; name?: string }) {
+export interface UpdateMyProfilePayload {
+  avatarId?: string;
+  name?: string;
+  disabilityType?: string;
+  disabilityGrade?: string;
+  handbookType?: string;
+  handbookIssuedAt?: string;
+  handbookExpiresAt?: string;
+  dateOfBirth?: string;
+}
+
+export function updateMyProfile(payload: UpdateMyProfilePayload) {
   return apiClient<MemberDetail>('/members/me', {
     method: 'PATCH',
     body: payload,

@@ -7,6 +7,157 @@ import { authStore } from '../../auth/auth-store';
 import { type HealthCheckData, fetchTodayHealthCheck } from '../api';
 import { HealthCheckForm } from './health-check-form';
 
+/* ── Flower bloom animation (CSS-only SVG) ── */
+
+function FlowerBloomAnimation() {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+      <div className="flex flex-col items-center gap-4">
+        <svg
+          width="120"
+          height="120"
+          viewBox="0 0 120 120"
+          className="animate-bloom"
+          aria-hidden="true"
+        >
+          {/* Petals */}
+          {[0, 60, 120, 180, 240, 300].map((angle) => (
+            <ellipse
+              key={angle}
+              cx="60"
+              cy="30"
+              rx="14"
+              ry="24"
+              fill="#ffc000"
+              opacity="0.85"
+              transform={`rotate(${angle} 60 60)`}
+            />
+          ))}
+          {/* Center */}
+          <circle cx="60" cy="60" r="14" fill="#ff9500" />
+          <circle cx="60" cy="60" r="8" fill="#ffab00" />
+          {/* Stem */}
+          <line x1="60" y1="84" x2="60" y2="115" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" />
+          {/* Leaves */}
+          <ellipse cx="52" cy="98" rx="8" ry="4" fill="#4ade80" transform="rotate(-30 52 98)" />
+          <ellipse cx="68" cy="104" rx="8" ry="4" fill="#4ade80" transform="rotate(30 68 104)" />
+        </svg>
+        <p className="text-lg font-bold text-gray-800">記録できました!</p>
+        <p className="text-sm text-gray-500">タスク一覧へ移動します...</p>
+      </div>
+
+      <style>{`
+        @keyframes bloom {
+          0% {
+            transform: scale(0) rotate(-30deg);
+            opacity: 0;
+          }
+          60% {
+            transform: scale(1.15) rotate(5deg);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(1) rotate(0deg);
+            opacity: 1;
+          }
+        }
+        .animate-bloom {
+          animation: bloom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/* ── Label helpers for summary ── */
+
+const MOOD_LABELS = ['', 'とてもつらい', 'つらい', 'ふつう', 'よい', 'とてもよい'];
+const SLEEP_LABELS = ['', '眠れなかった', 'あまり眠れず', 'ふつう', 'よく眠れた', 'ぐっすり'];
+const CONDITION_LABELS = ['', 'つらい', 'やや不調', 'ふつう', 'まあまあ', '元気'];
+const APPETITE_LABELS: Record<string, string> = { good: 'ある', normal: 'ふつう', none: 'ない' };
+const MED_LABELS: Record<string, string> = { taken: '飲んだ', not_taken: '飲み忘れた', not_applicable: '該当なし' };
+const PRN_EFFECT_LABELS: Record<string, string> = { effective: '効いた', not_effective: '効かなかった', unknown: 'わからない' };
+
+function SummaryRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-2">
+      <span className="shrink-0 text-xs font-semibold text-gray-500">{label}</span>
+      <span className="text-right text-sm font-medium text-gray-800">{value}</span>
+    </div>
+  );
+}
+
+function HealthCheckSummary({
+  data,
+  onEdit,
+}: {
+  data: HealthCheckData;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="space-y-4">
+      {/* Condition & Mood */}
+      <div className="rounded-2xl border border-white/60 bg-gradient-to-br from-amber-50/80 to-orange-50/60 p-5 shadow-sm">
+        <h3 className="mb-3 text-sm font-bold text-gray-800">体調・気分</h3>
+        <div className="divide-y divide-white/80">
+          <SummaryRow label="気分" value={`${MOOD_LABELS[data.mood]} (${data.mood}/5)`} />
+          {data.moodComment && <SummaryRow label="気分コメント" value={data.moodComment} />}
+          <SummaryRow label="体調" value={`${CONDITION_LABELS[data.condition]} (${data.condition}/5)`} />
+          {data.conditionComment && <SummaryRow label="体調コメント" value={data.conditionComment} />}
+          {data.bodyTemperature != null && <SummaryRow label="体温" value={`${data.bodyTemperature} ℃`} />}
+        </div>
+      </div>
+
+      {/* Sleep */}
+      <div className="rounded-2xl border border-white/60 bg-gradient-to-br from-indigo-50/80 to-violet-50/60 p-5 shadow-sm">
+        <h3 className="mb-3 text-sm font-bold text-gray-800">睡眠</h3>
+        <div className="divide-y divide-white/80">
+          <SummaryRow label="睡眠の質" value={`${SLEEP_LABELS[data.sleep]} (${data.sleep}/5)`} />
+          {data.bedTime && data.wakeTime && (
+            <SummaryRow label="就寝 → 起床" value={`${data.bedTime} → ${data.wakeTime}`} />
+          )}
+          {data.sleepHours != null && <SummaryRow label="睡眠時間" value={`${data.sleepHours.toFixed(1)} 時間`} />}
+        </div>
+      </div>
+
+      {/* Meals & Medication */}
+      <div className="rounded-2xl border border-white/60 bg-gradient-to-br from-emerald-50/80 to-teal-50/60 p-5 shadow-sm">
+        <h3 className="mb-3 text-sm font-bold text-gray-800">食事・服薬</h3>
+        <div className="divide-y divide-white/80">
+          {data.mealDinner != null && <SummaryRow label="前夜の夕食" value={data.mealDinner ? '食べた' : '食べなかった'} />}
+          {data.mealBreakfast != null && <SummaryRow label="今朝の朝食" value={data.mealBreakfast ? '食べた' : '食べなかった'} />}
+          {data.appetite && <SummaryRow label="食欲" value={APPETITE_LABELS[data.appetite] ?? data.appetite} />}
+          {data.medicationTaken && <SummaryRow label="今朝の服薬" value={MED_LABELS[data.medicationTaken] ?? data.medicationTaken} />}
+          {data.medicationNote && <SummaryRow label="服薬備考" value={data.medicationNote} />}
+          {data.prnMedicationUsed != null && (
+            <SummaryRow label="前日の頓服" value={data.prnMedicationUsed ? '使用した' : '使用していない'} />
+          )}
+          {data.prnMedicationUsed && data.prnMedicationEffect && (
+            <SummaryRow label="頓服の効果" value={PRN_EFFECT_LABELS[data.prnMedicationEffect] ?? data.prnMedicationEffect} />
+          )}
+        </div>
+      </div>
+
+      {/* Note */}
+      {data.note && (
+        <div className="rounded-2xl border border-white/60 bg-gradient-to-br from-sky-50/80 to-blue-50/60 p-5 shadow-sm">
+          <h3 className="mb-2 text-sm font-bold text-gray-800">ひとこと</h3>
+          <p className="text-sm text-gray-700">{data.note}</p>
+        </div>
+      )}
+
+      {/* Edit button */}
+      <button
+        type="button"
+        onClick={onEdit}
+        className="w-full rounded-2xl border-2 border-gray-200 bg-white px-6 py-4 text-base font-bold text-gray-600 transition-all duration-200 hover:border-gray-300 hover:text-gray-800 active:scale-[0.98]"
+      >
+        修正する
+      </button>
+    </div>
+  );
+}
+
 export function HealthCheckPageContent() {
   const router = useRouter();
   const [initialData, setInitialData] = useState<HealthCheckData | null>(null);
@@ -14,6 +165,8 @@ export function HealthCheckPageContent() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [streakDays, setStreakDays] = useState(0);
+  const [showFlowerAnimation, setShowFlowerAnimation] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const loadToday = useCallback(async () => {
     if (!authStore.isAuthenticated()) {
@@ -53,10 +206,12 @@ export function HealthCheckPageContent() {
     setStreakDays(result.streakDays);
 
     if (result.isUpdate) {
-      setSuccessMessage('体調を更新しました！');
+      setShowForm(false);
+      setSuccessMessage('体調を更新しました!');
       setTimeout(() => setSuccessMessage(''), 3000);
     } else {
-      setSuccessMessage('体調を記録しました！ タスク一覧へ移動します...');
+      // First submission: show flower animation then navigate
+      setShowFlowerAnimation(true);
       setTimeout(() => {
         router.push('/micro-tasks');
       }, 2000);
@@ -99,13 +254,18 @@ export function HealthCheckPageContent() {
 
   return (
     <div className="space-y-5">
+      {/* Flower animation overlay */}
+      {showFlowerAnimation && <FlowerBloomAnimation />}
+
       {/* Header with greeting */}
       <div className="text-center">
         <h2 className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-xl font-bold text-transparent">
-          今日の体調を記録しましょう
+          {initialData && !showForm ? '今日の記録' : '今日の体調を記録しましょう'}
         </h2>
         <p className="mt-1 text-xs text-gray-400">
-          毎日の記録があなたの健康管理に役立ちます
+          {initialData && !showForm
+            ? '本日の体調は記録済みです'
+            : '毎日の記録があなたの健康管理に役立ちます'}
         </p>
       </div>
 
@@ -128,7 +288,7 @@ export function HealthCheckPageContent() {
                 <span className="ml-1 text-sm">日連続</span>
               </p>
               <p className="text-[10px] text-gray-500">
-                継続は力なり！
+                継続は力なり!
               </p>
             </div>
           </div>
@@ -162,12 +322,19 @@ export function HealthCheckPageContent() {
         </div>
       )}
 
-      {/* Form */}
-      <HealthCheckForm
-        key={initialData?.id ?? 'new'}
-        initialData={initialData}
-        onSubmitSuccess={handleSubmitSuccess}
-      />
+      {/* Summary or Form */}
+      {initialData && !showForm ? (
+        <HealthCheckSummary
+          data={initialData}
+          onEdit={() => setShowForm(true)}
+        />
+      ) : (
+        <HealthCheckForm
+          key={initialData?.id ?? 'new'}
+          initialData={initialData}
+          onSubmitSuccess={handleSubmitSuccess}
+        />
+      )}
     </div>
   );
 }

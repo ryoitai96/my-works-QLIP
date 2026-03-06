@@ -105,7 +105,7 @@ export function AttendancePageContent() {
 
   if (!mounted) {
     return (
-      <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
+      <div className="mx-auto max-w-6xl space-y-6">
         <div className="h-10 w-48 animate-pulse rounded-xl bg-gray-100" />
         <div className="h-12 animate-pulse rounded-xl bg-gray-100" />
         <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
@@ -121,7 +121,7 @@ export function AttendancePageContent() {
   // R01/R02: Staff view
   if (isStaffRole(role)) {
     return (
-      <div className="mx-auto max-w-6xl space-y-8 px-6 py-8">
+      <div className="mx-auto max-w-6xl space-y-8">
         <StaffAttendanceContent />
         <div className="border-t border-gray-200 pt-8">
           <HRCorrectionsContent />
@@ -133,7 +133,7 @@ export function AttendancePageContent() {
   // R04: Client HR
   if (isClientHR(role)) {
     return (
-      <div className="mx-auto max-w-4xl px-6 py-8">
+      <div className="mx-auto max-w-4xl">
         <HRCorrectionsContent />
       </div>
     );
@@ -141,7 +141,7 @@ export function AttendancePageContent() {
 
   // R03: Member view — punch clock + info
   return (
-    <div className="mx-auto max-w-6xl px-6 py-8">
+    <div className="mx-auto max-w-6xl">
       {/* Page title */}
       <h1 className="mb-4 text-xl font-bold text-gray-900">勤怠管理</h1>
 

@@ -1,10 +1,12 @@
 import { apiClient } from '../../lib/api-client';
 
 export interface AssessmentAnswer {
+  id: string;
   questionId: string;
   domain: string;
   questionText: string;
   score: number | null;
+  isStrength: boolean;
 }
 
 export interface AssessmentData {
@@ -43,4 +45,25 @@ export async function submitAssessment(
     body: data,
     auth: true,
   });
+}
+
+export async function fetchAssessmentHistory(): Promise<AssessmentData[]> {
+  return apiClient<AssessmentData[]>('/assessments/history', { auth: true });
+}
+
+export async function fetchMemberAssessmentHistory(
+  memberId: string,
+): Promise<AssessmentData[]> {
+  return apiClient<AssessmentData[]>(`/assessments/history/${memberId}`, {
+    auth: true,
+  });
+}
+
+export async function toggleStrengthFlag(
+  answerId: string,
+): Promise<AssessmentAnswer> {
+  return apiClient<AssessmentAnswer>(
+    `/assessments/answers/${answerId}/strength`,
+    { method: 'PATCH', auth: true },
+  );
 }

@@ -5,8 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ApiClientError } from '../../../lib/api-client';
 import { authStore } from '../../auth/auth-store';
-import { type SiteOption, type CreateMemberPayload, createMember, fetchSites } from '../api';
+import { type SiteOption, type CreateMemberPayload, type OcrResult, createMember, fetchSites } from '../api';
+import { createSite } from '../../settings/api';
+import { isStaffRole } from '../../auth/role-check';
 import { AvatarPicker } from '../../../components/avatar-picker';
+import { CertificateOcrUploader } from './certificate-ocr-uploader';
 
 export function MemberCreateContent() {
   const router = useRouter();
@@ -24,10 +27,36 @@ export function MemberCreateContent() {
     disabilityType: '',
     disabilityGrade: '',
     handbookType: '',
+    handbookIssuedAt: '',
+    handbookExpiresAt: '',
     employmentType: '',
     enrolledAt: '',
     avatarId: 'avatar-01',
   });
+  const [ocrFilledFields, setOcrFilledFields] = useState<Set<string>>(new Set());
+  const [showAddSite, setShowAddSite] = useState(false);
+  const [newSiteName, setNewSiteName] = useState('');
+  const [newSiteType, setNewSiteType] = useState('satellite_office');
+  const [newSiteAddress, setNewSiteAddress] = useState('');
+  const [creatingSite, setCreatingSite] = useState(false);
+
+  const user = authStore.getUser();
+  const canAddSite = user?.role ? isStaffRole(user.role) : false;
+
+  const handleOcrResult = (result: OcrResult) => {
+    const filled = new Set<string>();
+    setForm((prev) => {
+      const next = { ...prev };
+      for (const [key, value] of Object.entries(result)) {
+        if (value && !prev[key as keyof typeof prev]) {
+          (next as Record<string, string>)[key] = value;
+          filled.add(key);
+        }
+      }
+      return next;
+    });
+    setOcrFilledFields((prev) => new Set([...prev, ...filled]));
+  };
 
   const loadSites = useCallback(async () => {
     if (!authStore.isAuthenticated()) {
@@ -48,6 +77,28 @@ export function MemberCreateContent() {
   useEffect(() => {
     loadSites();
   }, [loadSites]);
+
+  const handleAddSite = async () => {
+    if (!newSiteName.trim()) return;
+    setCreatingSite(true);
+    try {
+      const created = await createSite({
+        name: newSiteName.trim(),
+        siteType: newSiteType,
+        address: newSiteAddress.trim() || undefined,
+      });
+      setSites((prev) => [...prev, { id: created.id, name: created.name }]);
+      setForm((prev) => ({ ...prev, siteId: created.id }));
+      setShowAddSite(false);
+      setNewSiteName('');
+      setNewSiteType('satellite_office');
+      setNewSiteAddress('');
+    } catch {
+      // keep form open
+    } finally {
+      setCreatingSite(false);
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -70,6 +121,8 @@ export function MemberCreateContent() {
         ...(form.disabilityType ? { disabilityType: form.disabilityType } : {}),
         ...(form.disabilityGrade ? { disabilityGrade: form.disabilityGrade } : {}),
         ...(form.handbookType ? { handbookType: form.handbookType } : {}),
+        ...(form.handbookIssuedAt ? { handbookIssuedAt: form.handbookIssuedAt } : {}),
+        ...(form.handbookExpiresAt ? { handbookExpiresAt: form.handbookExpiresAt } : {}),
         ...(form.employmentType ? { employmentType: form.employmentType } : {}),
         ...(form.enrolledAt ? { enrolledAt: form.enrolledAt } : {}),
         avatarId: form.avatarId,
@@ -97,6 +150,13 @@ export function MemberCreateContent() {
     'block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#ffc000] focus:outline-none focus:ring-1 focus:ring-[#ffc000]/30';
   const labelClass = 'mb-1 block text-sm font-medium text-gray-700';
 
+  const ocrBadge = (fieldName: string) =>
+    ocrFilledFields.has(fieldName) ? (
+      <span className="ml-2 inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">
+        手帳から自動入力
+      </span>
+    ) : null;
+
   return (
     <div>
       <Link
@@ -117,6 +177,11 @@ export function MemberCreateContent() {
             {error}
           </div>
         )}
+
+        <div className="mb-6">
+          <label className={labelClass}>障害者手帳OCR読み取り</label>
+          <CertificateOcrUploader onOcrResult={handleOcrResult} />
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
@@ -154,23 +219,84 @@ export function MemberCreateContent() {
               />
             </div>
             <div>
-              <label className={labelClass}>
-                拠点 <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="siteId"
-                required
-                value={form.siteId}
-                onChange={handleChange}
-                className={inputClass}
-              >
-                <option value="">選択してください</option>
-                {sites.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-700">
+                  拠点 <span className="text-red-500">*</span>
+                </label>
+                {canAddSite && !showAddSite && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddSite(true)}
+                    className="text-xs font-medium text-[#b38600] hover:text-[#8a6800]"
+                  >
+                    + 新規追加
+                  </button>
+                )}
+              </div>
+              {showAddSite ? (
+                <div className="space-y-2 rounded-lg border border-[#ffc000]/30 bg-[#ffc000]/5 p-3">
+                  <input
+                    type="text"
+                    value={newSiteName}
+                    onChange={(e) => setNewSiteName(e.target.value)}
+                    placeholder="拠点名"
+                    className={inputClass}
+                  />
+                  <select
+                    value={newSiteType}
+                    onChange={(e) => setNewSiteType(e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="satellite_office">サテライトオフィス</option>
+                    <option value="flower_lab">フラワーラボ</option>
+                    <option value="remote">リモート</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={newSiteAddress}
+                    onChange={(e) => setNewSiteAddress(e.target.value)}
+                    placeholder="住所（任意）"
+                    className={inputClass}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleAddSite}
+                      disabled={creatingSite || !newSiteName.trim()}
+                      className="rounded-lg bg-[#ffc000] px-3 py-1.5 text-xs font-medium text-gray-900 hover:bg-[#e6ad00] disabled:opacity-50"
+                    >
+                      {creatingSite ? '追加中...' : '追加'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddSite(false);
+                        setNewSiteName('');
+                        setNewSiteType('satellite_office');
+                        setNewSiteAddress('');
+                      }}
+                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <select
+                  name="siteId"
+                  required
+                  value={form.siteId}
+                  onChange={handleChange}
+                  className={inputClass}
+                >
+                  <option value="">選択してください</option>
+                  {sites.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.companyName ? `${s.companyName} / ${s.name}` : s.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
             <div>
               <label className={labelClass}>従業員番号</label>
@@ -198,7 +324,7 @@ export function MemberCreateContent() {
               </select>
             </div>
             <div>
-              <label className={labelClass}>生年月日</label>
+              <label className={labelClass}>生年月日{ocrBadge('dateOfBirth')}</label>
               <input
                 type="date"
                 name="dateOfBirth"
@@ -208,7 +334,7 @@ export function MemberCreateContent() {
               />
             </div>
             <div>
-              <label className={labelClass}>障害種別</label>
+              <label className={labelClass}>障害種別{ocrBadge('disabilityType')}</label>
               <select
                 name="disabilityType"
                 value={form.disabilityType}
@@ -224,11 +350,45 @@ export function MemberCreateContent() {
               </select>
             </div>
             <div>
-              <label className={labelClass}>障害等級</label>
+              <label className={labelClass}>障害等級{ocrBadge('disabilityGrade')}</label>
               <input
                 type="text"
                 name="disabilityGrade"
                 value={form.disabilityGrade}
+                onChange={handleChange}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>手帳種類{ocrBadge('handbookType')}</label>
+              <select
+                name="handbookType"
+                value={form.handbookType}
+                onChange={handleChange}
+                className={inputClass}
+              >
+                <option value="">選択してください</option>
+                <option value="physical">身体障害者手帳</option>
+                <option value="rehabilitation">療育手帳</option>
+                <option value="mental_health">精神障害者保健福祉手帳</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>手帳取得日{ocrBadge('handbookIssuedAt')}</label>
+              <input
+                type="date"
+                name="handbookIssuedAt"
+                value={form.handbookIssuedAt}
+                onChange={handleChange}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>手帳有効期限{ocrBadge('handbookExpiresAt')}</label>
+              <input
+                type="date"
+                name="handbookExpiresAt"
+                value={form.handbookExpiresAt}
                 onChange={handleChange}
                 className={inputClass}
               />

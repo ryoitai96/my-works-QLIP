@@ -50,6 +50,13 @@ export class MemberController {
     return this.memberService.findByTenant(user.tenantId);
   }
 
+  @Post('ocr')
+  @Roles(...STAFF_ROLES, Role.CLIENT_HR, ...MEMBER_ROLES)
+  @UseInterceptors(FileInterceptor('file', { storage }))
+  async ocrCertificate(@UploadedFile() file: Express.Multer.File) {
+    return this.memberService.ocrCertificate(file);
+  }
+
   @Get('me')
   @Roles(...STAFF_ROLES, Role.CLIENT_HR, ...MEMBER_ROLES)
   async findMe(@CurrentUser() user: JwtPayload) {

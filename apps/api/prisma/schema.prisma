@@ -26,6 +26,7 @@ model Tenant {
   svcMessage     Boolean @default(true) @map("svc_message")
   svcThanks      Boolean @default(true) @map("svc_thanks")
   svcFlowerOrder Boolean @default(true) @map("svc_flower_order")
+  svcSos         Boolean @default(true) @map("svc_sos")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -35,6 +36,7 @@ model Tenant {
   members    Member[]
   microTasks MicroTask[]
   teams      Team[]
+  sosReports SosReport[]
 
   @@map("tenants")
 }
@@ -45,9 +47,11 @@ model Site {
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id])
 
-  name      String
-  siteType  String /// "satellite_office" | "flower_lab" | "remote"
-  address   String?
+  name        String
+  companyName String? /// 運営企業名（例: My WORKS, 外部委託先名）
+  serviceName String? /// サービス名（例: フラワーラボ花工房, ITサテライト）
+  siteType    String /// "satellite_office" | "flower_lab" | "remote"
+  address     String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -55,6 +59,7 @@ model Site {
   members             Member[]
   users               User[]
   microTasks          MicroTask[]
+  sosReports          SosReport[]
   @@map("sites")
 }
 
@@ -91,6 +96,8 @@ model User {
   receivedMessages     Message[]                     @relation("ReceivedMessages")
   messageComments      MessageComment[]
   messageReads         MessageRead[]
+  sosReports           SosReport[]       @relation("SosReporter")
+  sosResolutions       SosReport[]       @relation("SosResolver")
 
   @@map("users")
 }
@@ -125,6 +132,10 @@ model Member {
   enrolledAt         DateTime @default(now()) /// 入職日
   status             String   @default("active") /// "active"|"inactive"|"on_leave"
 
+  alertLevel    String?  /// "WARNING"|"CRITICAL" — JCが手動設定
+  alertReason   String?  /// アラート理由
+  alertSetById  String?  /// アラート設定者のuserId
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -135,6 +146,7 @@ model Member {
   documents             Document[]
   attendanceRecords     AttendanceRecord[]
   workSchedule          MemberWorkSchedule?
+  giftQrTokens          GiftQrToken[]
   @@map("members")
 }
 
@@ -308,6 +320,23 @@ model VitalScore {
   /// ※暗号化対象（L4）
   medicationTaken String? /// "taken"|"not_taken"|"not_applicable"（任意・同意ベース）
 
+  /// ※暗号化対象（L3）
+  moodComment      String? /// 気分コメント（任意）
+  /// ※暗号化対象（L3）
+  conditionComment String? /// 体調コメント（任意）
+
+  bedTime  String? /// 就寝時間 "HH:mm"（任意）
+  wakeTime String? /// 起床時間 "HH:mm"（任意）
+
+  appetite String? /// 食欲 "good"|"normal"|"none"（任意）
+
+  /// ※暗号化対象（L4）
+  medicationNote      String?  /// 服薬備考（任意）
+  /// ※暗号化対象（L4）
+  prnMedicationUsed   Boolean? /// 前日の頓服使用（任意・同意ベース）
+  /// ※暗号化対象（L4）
+  prnMedicationEffect String?  /// 頓服効果 "effective"|"not_effective"|"unknown"（任意）
+
   /// ※暗号化対象（L4）
   note String? /// ひとこと自由入力（任意・音声入力対応）
 
@@ -357,6 +386,8 @@ model FlowerOrder {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
+  giftQrToken GiftQrToken?
+
   @@index([userId, createdAt])
   @@map("flower_orders")
 }
@@ -367,8 +398,8 @@ model FlowerOrder {
 model ThanksCard {
   id String @id @default(uuid())
 
-  fromUserId String
-  fromUser   User @relation("SentThanks", fields: [fromUserId], references: [id])
+  fromUserId String?
+  fromUser   User? @relation("SentThanks", fields: [fromUserId], references: [id])
 
   toUserId String
   toUser   User @relation("ReceivedThanks", fields: [toUserId], references: [id])
@@ -376,10 +407,43 @@ model ThanksCard {
   content  String /// 感謝メッセージ
   category String /// "great_job" | "teamwork" | "creativity" | "kindness" | "other"
 
+  isQrThanks        Boolean @default(false) /// QRコード経由の感謝か
+  senderDisplayName String? /// 外部送信者の任意表示名
+
+  qrTokenId String?
+  qrToken   GiftQrToken? @relation(fields: [qrTokenId], references: [id])
+
   createdAt DateTime @default(now())
 
   @@index([toUserId, createdAt])
   @@map("thanks_cards")
+}
+
+// ===== QRサンクス =====
+
+/// QRコード付きギフトトークン
+model GiftQrToken {
+  id    String @id @default(uuid())
+  token String @unique /// nanoid生成のURL安全トークン
+
+  memberId          String
+  member            Member @relation(fields: [memberId], references: [id])
+  memberDisplayName String /// メンバーの表示名（非正規化）
+  siteName          String /// 拠点名（非正規化）
+  storyText         String /// ストーリーテキスト
+
+  flowerOrderId String?      @unique
+  flowerOrder   FlowerOrder? @relation(fields: [flowerOrderId], references: [id])
+
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime /// トークン有効期限
+
+  createdAt DateTime @default(now())
+
+  thanksCards ThanksCard[]
+
+  @@index([token])
+  @@map("gift_qr_tokens")
 }
 
 // ===== 書類管理 =====
@@ -577,4 +641,37 @@ model MessageRead {
 
   @@unique([messageId, userId])
   @@map("message_reads")
+}
+
+// ===== SOS（内部通報） =====
+
+/// SOS通報レコード
+model SosReport {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  reporterUserId String?
+  reporter       User?   @relation("SosReporter", fields: [reporterUserId], references: [id])
+
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id])
+
+  category    String /// "harassment"|"overwork"|"health"|"other"
+  content     String /// 通報内容テキスト
+  isAnonymous Boolean @default(false)
+
+  status String @default("pending") /// "pending"|"in_progress"|"resolved"|"closed"
+
+  resolvedById   String?
+  resolvedBy     User?     @relation("SosResolver", fields: [resolvedById], references: [id])
+  resolutionNote String?
+  resolvedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, createdAt])
+  @@index([siteId, createdAt])
+  @@map("sos_reports")
 }

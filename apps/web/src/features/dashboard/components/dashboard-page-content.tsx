@@ -6,6 +6,8 @@ import { authStore } from '../../auth/auth-store';
 import { isStaffRole, isMemberRole } from '../../auth/role-check';
 import { StatCard } from './stat-card';
 import { MemberDashboardContent } from './member-dashboard-content';
+import { JCDashboardPageContent } from '../../jc-dashboard/components/jc-dashboard-page-content';
+import { Role } from '@qlip/shared';
 
 const SITE_TYPE_LABELS: Record<string, string> = {
   flower_lab: 'フラワーラボ',
@@ -62,6 +64,24 @@ export function DashboardPageContent() {
     return <MemberDashboardContent />;
   }
 
+  // JC (R02) sees condition management dashboard as primary view
+  if (userRole === Role.JOB_COACH) {
+    return (
+      <div className="space-y-8">
+        <JCDashboardPageContent />
+        {/* Staff stats below */}
+        {stats && (
+          <>
+            <div className="border-t border-gray-200 pt-6">
+              <h2 className="mb-4 text-lg font-bold text-gray-900">運営サマリー</h2>
+              <StaffStatsGrid stats={stats} />
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -82,6 +102,10 @@ export function DashboardPageContent() {
 
   if (!stats) return null;
 
+  return <StaffStatsGrid stats={stats} />;
+}
+
+function StaffStatsGrid({ stats }: { stats: DashboardStats }) {
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {/* Members */}

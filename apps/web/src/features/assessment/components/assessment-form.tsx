@@ -118,19 +118,33 @@ const SCORE_LABELS = ['', '当てはまらない', '', 'どちらとも\nいえ�
 
 interface AssessmentFormProps {
   initialAnswers?: Record<string, number>;
+  initialStrengths?: Set<string>;
   onSubmitSuccess: (data: AssessmentData) => void;
 }
 
 export function AssessmentForm({
   initialAnswers,
+  initialStrengths,
   onSubmitSuccess,
 }: AssessmentFormProps) {
   const [answers, setAnswers] = useState<Record<string, number>>(
     initialAnswers ?? {},
   );
+  const [strengths, setStrengths] = useState<Set<string>>(
+    initialStrengths ?? new Set(),
+  );
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const toggleStrength = (questionId: string) => {
+    setStrengths((prev) => {
+      const next = new Set(prev);
+      if (next.has(questionId)) next.delete(questionId);
+      else next.add(questionId);
+      return next;
+    });
+  };
 
   const answeredCount = Object.keys(answers).length;
   const totalCount = QUESTIONS.length;
@@ -283,13 +297,28 @@ export function AssessmentForm({
                   : 'border-gray-200 bg-white'
               }`}
             >
-              {/* Question text */}
-              <p className="mb-3 text-sm leading-relaxed text-gray-800">
-                <span className="mr-1.5 inline-flex h-5 w-5 items-center justify-center rounded-md bg-gray-100 text-[11px] font-bold tabular-nums text-gray-500">
-                  {qIdx + 1}
-                </span>
-                {q.questionText}
-              </p>
+              {/* Question text with strength toggle */}
+              <div className="mb-3 flex items-start gap-2">
+                <p className="flex-1 text-sm leading-relaxed text-gray-800">
+                  <span className="mr-1.5 inline-flex h-5 w-5 items-center justify-center rounded-md bg-gray-100 text-[11px] font-bold tabular-nums text-gray-500">
+                    {qIdx + 1}
+                  </span>
+                  {q.questionText}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => toggleStrength(q.questionId)}
+                  title={strengths.has(q.questionId) ? 'ストレングスを解除' : 'これは得意!'}
+                  className={`shrink-0 rounded-md p-1 text-lg transition-all ${
+                    strengths.has(q.questionId)
+                      ? 'text-[#ffc000] hover:text-[#e0a800]'
+                      : 'text-gray-300 hover:text-gray-400'
+                  }`}
+                  aria-label={strengths.has(q.questionId) ? 'ストレングス設定済み' : 'ストレングスを設定'}
+                >
+                  {strengths.has(q.questionId) ? '\u2605' : '\u2606'}
+                </button>
+              </div>
 
               {/* Segmented scoring control */}
               <div role="radiogroup" aria-label={q.questionText}>

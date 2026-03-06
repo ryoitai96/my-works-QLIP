@@ -22,7 +22,7 @@ export class MemberService {
         enrolledAt: true,
         status: true,
         user: { select: { name: true, email: true } },
-        site: { select: { name: true } },
+        site: { select: { name: true, companyName: true, serviceName: true } },
       },
       orderBy: { enrolledAt: 'desc' },
     });
@@ -34,7 +34,7 @@ export class MemberService {
       where: { id, tenantId },
       include: {
         user: { select: { name: true, email: true } },
-        site: { select: { id: true, name: true } },
+        site: { select: { id: true, name: true, companyName: true, serviceName: true } },
         documents: {
           select: {
             id: true,
@@ -124,6 +124,8 @@ export class MemberService {
           disabilityType: dto.disabilityType || null,
           disabilityGrade: dto.disabilityGrade || null,
           handbookType: dto.handbookType || null,
+          handbookIssuedAt: dto.handbookIssuedAt ? new Date(dto.handbookIssuedAt) : null,
+          handbookExpiresAt: dto.handbookExpiresAt ? new Date(dto.handbookExpiresAt) : null,
           employmentType: dto.employmentType || null,
           enrolledAt: dto.enrolledAt ? new Date(dto.enrolledAt) : new Date(),
         },
@@ -199,7 +201,7 @@ export class MemberService {
         },
         include: {
           user: { select: { name: true, email: true } },
-          site: { select: { id: true, name: true } },
+          site: { select: { id: true, name: true, companyName: true, serviceName: true } },
         },
       });
     });
@@ -291,15 +293,44 @@ export class MemberService {
       where: { userId },
       include: {
         user: { select: { name: true, email: true } },
-        site: { select: { id: true, name: true } },
+        site: { select: { id: true, name: true, companyName: true, serviceName: true } },
       },
     });
     if (!member) throw new NotFoundException('メンバーが見つかりません');
     return member;
   }
 
-  /** メンバー自身によるプロフィール更新（avatarId, name のみ） */
-  async updateSelf(userId: string, dto: Pick<UpdateMemberDto, 'avatarId' | 'name'>) {
+  /** モックOCR（2〜3秒遅延後にダミーデータを返す） */
+  async ocrCertificate(_file: { originalname: string; mimetype: string }) {
+    await new Promise((resolve) =>
+      setTimeout(resolve, 2000 + Math.random() * 1000),
+    );
+
+    return {
+      disabilityType: 'physical',
+      disabilityGrade: '2級',
+      handbookType: 'physical',
+      handbookIssuedAt: '2024-04-01',
+      handbookExpiresAt: '2029-03-31',
+      dateOfBirth: '1990-05-15',
+    };
+  }
+
+  /** メンバー自身によるプロフィール更新（avatarId, name, 障害情報） */
+  async updateSelf(
+    userId: string,
+    dto: Pick<
+      UpdateMemberDto,
+      | 'avatarId'
+      | 'name'
+      | 'disabilityType'
+      | 'disabilityGrade'
+      | 'handbookType'
+      | 'handbookIssuedAt'
+      | 'handbookExpiresAt'
+      | 'dateOfBirth'
+    >,
+  ) {
     const member = await this.prisma.member.findUnique({
       where: { userId },
     });
@@ -317,10 +348,28 @@ export class MemberService {
         where: { id: member.id },
         data: {
           ...(dto.avatarId !== undefined ? { avatarId: dto.avatarId || null } : {}),
+          ...(dto.disabilityType !== undefined
+            ? { disabilityType: dto.disabilityType || null }
+            : {}),
+          ...(dto.disabilityGrade !== undefined
+            ? { disabilityGrade: dto.disabilityGrade || null }
+            : {}),
+          ...(dto.handbookType !== undefined
+            ? { handbookType: dto.handbookType || null }
+            : {}),
+          ...(dto.handbookIssuedAt !== undefined
+            ? { handbookIssuedAt: dto.handbookIssuedAt ? new Date(dto.handbookIssuedAt) : null }
+            : {}),
+          ...(dto.handbookExpiresAt !== undefined
+            ? { handbookExpiresAt: dto.handbookExpiresAt ? new Date(dto.handbookExpiresAt) : null }
+            : {}),
+          ...(dto.dateOfBirth !== undefined
+            ? { dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : null }
+            : {}),
         },
         include: {
           user: { select: { name: true, email: true } },
-          site: { select: { id: true, name: true } },
+          site: { select: { id: true, name: true, companyName: true, serviceName: true } },
         },
       });
     });
@@ -330,7 +379,7 @@ export class MemberService {
   async fetchSites(tenantId: string) {
     return this.prisma.site.findMany({
       where: { tenantId, isActive: true },
-      select: { id: true, name: true },
+      select: { id: true, name: true, companyName: true },
       orderBy: { name: 'asc' },
     });
   }

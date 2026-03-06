@@ -17,6 +17,7 @@ import {
   downloadDocument,
 } from '../api';
 import { PentagonChart } from '../../assessment/components/pentagon-chart';
+import { CharacteristicProfileCard } from '../../characteristic-profile/components/characteristic-profile-card';
 import { MemberAvatar } from '../../../components/member-avatar';
 import { AvatarPicker } from '../../../components/avatar-picker';
 
@@ -321,7 +322,7 @@ export function MemberDetailContent({ memberId }: { memberId: string }) {
                 <select name="siteId" value={editForm.siteId ?? ''} onChange={handleEditChange} className={inputClass}>
                   <option value="">選択してください</option>
                   {sites.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
+                    <option key={s.id} value={s.id}>{s.companyName ? `${s.companyName} / ${s.name}` : s.name}</option>
                   ))}
                 </select>
               </div>
@@ -356,7 +357,13 @@ export function MemberDetailContent({ memberId }: { memberId: string }) {
                 label="性別"
                 value={member.gender ? (GENDER_LABELS[member.gender] ?? member.gender) : '—'}
               />
-              <DlItem label="拠点" value={member.site.name} />
+              <DlItem
+                label="拠点"
+                value={[member.site.companyName, member.site.name].filter(Boolean).join(' / ')}
+              />
+              {member.site.serviceName && (
+                <DlItem label="サービス名" value={member.site.serviceName} />
+              )}
               <DlItem
                 label="雇用形態"
                 value={member.employmentType ? (EMPLOYMENT_TYPE_LABELS[member.employmentType] ?? member.employmentType) : '—'}
@@ -470,6 +477,9 @@ export function MemberDetailContent({ memberId }: { memberId: string }) {
             </p>
           )}
         </div>
+
+        {/* 特性プロファイルカード */}
+        <CharacteristicProfileCard memberId={memberId} />
 
         {/* 体調入力カード */}
         <div className="rounded-xl border bg-white p-6 shadow-sm">

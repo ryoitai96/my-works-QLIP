@@ -47,6 +47,7 @@ export class TenantServiceGuard implements CanActivate {
         svcMessage: true,
         svcThanks: true,
         svcFlowerOrder: true,
+        svcSos: true,
       },
     });
 
@@ -62,6 +63,7 @@ export class TenantServiceGuard implements CanActivate {
       message: tenant.svcMessage,
       thanks: tenant.svcThanks,
       flower_order: tenant.svcFlowerOrder,
+      sos: tenant.svcSos,
     };
 
     if (!serviceMap[requiredService]) {

@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -33,6 +33,14 @@ export class SettingsController {
   @Get('sites')
   async getSites(@CurrentUser() user: JwtPayload) {
     return this.settingsService.getSites(user);
+  }
+
+  @Post('sites')
+  async createSite(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: { name: string; siteType: string; address?: string },
+  ) {
+    return this.settingsService.createSite(user, body);
   }
 
   @Patch('sites/:siteId')

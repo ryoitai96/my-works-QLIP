@@ -18,6 +18,10 @@ import { ProductModule } from './modules/product/product.module';
 import { OrderModule } from './modules/order/order.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { MessageModule } from './modules/message/message.module';
+import { CharacteristicProfileModule } from './modules/characteristic-profile/characteristic-profile.module';
+import { SosModule } from './modules/sos/sos.module';
+import { QrThanksModule } from './modules/qr-thanks/qr-thanks.module';
+import { SiteModule } from './modules/site/site.module';
 import { DatabaseModule } from './database/database.module';
 
 @Module({
@@ -44,6 +48,10 @@ import { DatabaseModule } from './database/database.module';
     OrderModule,
     AttendanceModule,
     MessageModule,
+    CharacteristicProfileModule,
+    SosModule,
+    QrThanksModule,
+    SiteModule,
   ],
 })
 export class AppModule {}

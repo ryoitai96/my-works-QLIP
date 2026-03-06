@@ -1,13 +1,16 @@
 'use client';
 
+type Scores = {
+  d1: number | null;
+  d2: number | null;
+  d3: number | null;
+  d4: number | null;
+  d5: number | null;
+};
+
 interface PentagonChartProps {
-  scores: {
-    d1: number | null;
-    d2: number | null;
-    d3: number | null;
-    d4: number | null;
-    d5: number | null;
-  };
+  scores: Scores;
+  previousScores?: Scores;
 }
 
 const LABELS = [
@@ -35,7 +38,7 @@ function getVertexAngle(index: number) {
   return (360 / 5) * index;
 }
 
-export function PentagonChart({ scores }: PentagonChartProps) {
+export function PentagonChart({ scores, previousScores }: PentagonChartProps) {
   // Grid lines for each level
   const gridLines = Array.from({ length: LEVELS }, (_, i) => {
     const level = i + 1;
@@ -90,11 +93,31 @@ export function PentagonChart({ scores }: PentagonChartProps) {
     <circle key={i} cx={p.x} cy={p.y} r="5" fill="#ffc000" />
   ));
 
+  // Previous data polygon (for comparison overlay)
+  const prevPolygon = previousScores
+    ? LABELS.map(({ key }, i) => {
+        const score = previousScores[key] ?? 0;
+        const r = (RADIUS / LEVELS) * score;
+        const p = polarToXY(getVertexAngle(i), r);
+        return `${p.x},${p.y}`;
+      }).join(' ')
+    : null;
+
   return (
     <div className="flex justify-center" role="img" aria-label="五角形アセスメントチャート">
       <svg width="300" height="300" viewBox="0 0 300 300">
         {gridLines}
         {axisLines}
+        {prevPolygon && (
+          <polygon
+            points={prevPolygon}
+            fill="#9ca3af"
+            fillOpacity="0.15"
+            stroke="#9ca3af"
+            strokeWidth="1.5"
+            strokeDasharray="4 3"
+          />
+        )}
         <polygon
           points={dataPolygon}
           fill="#ffc000"

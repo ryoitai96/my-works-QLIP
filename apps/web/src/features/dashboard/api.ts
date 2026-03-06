@@ -48,13 +48,37 @@ export interface MemberDashboardStats {
     receivedThisMonth: number;
     recentCards: Array<{
       id: string;
-      fromUserId: string;
+      fromUserId: string | null;
       toUserId: string;
       content: string;
       category: string;
+      isQrThanks?: boolean;
+      senderDisplayName?: string | null;
       createdAt: string;
-      fromUser: { id: string; name: string };
+      fromUser: { id: string; name: string } | null;
     }>;
+  };
+  todayTasks: Array<{
+    id: string;
+    status: string;
+    microTask: {
+      taskCode: string;
+      name: string;
+      standardDuration: number | null;
+    };
+  }>;
+  healthCheck: {
+    submittedToday: boolean;
+    streakDays: number;
+  };
+  points: number;
+  badges: Array<{ id: string; earned: boolean }>;
+  badgeStats: {
+    healthReports: number;
+    tasksCompleted: number;
+    thanksSent: number;
+    thanksReceived: number;
+    assessments: number;
   };
 }
 

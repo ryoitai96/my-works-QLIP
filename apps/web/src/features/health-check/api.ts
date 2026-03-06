@@ -10,6 +10,15 @@ export interface HealthCheckData {
   mealBreakfast: boolean | null;
   mealLunch: boolean | null;
   mealDinner: boolean | null;
+  moodComment: string | null;
+  conditionComment: string | null;
+  bedTime: string | null;
+  wakeTime: string | null;
+  appetite: string | null;
+  medicationTaken: string | null;
+  medicationNote: string | null;
+  prnMedicationUsed: boolean | null;
+  prnMedicationEffect: string | null;
   note: string | null;
   streakDays: number;
   recordDate: string;
@@ -25,6 +34,15 @@ export interface SubmitHealthCheckRequest {
   mealBreakfast?: boolean;
   mealLunch?: boolean;
   mealDinner?: boolean;
+  moodComment?: string;
+  conditionComment?: string;
+  bedTime?: string;
+  wakeTime?: string;
+  appetite?: string;
+  medicationTaken?: string;
+  medicationNote?: string;
+  prnMedicationUsed?: boolean;
+  prnMedicationEffect?: string;
   note?: string;
 }
 

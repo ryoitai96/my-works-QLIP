@@ -12,10 +12,8 @@ export default async function UserDetailPage({
 }) {
   const { id } = await params;
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#ffc000]/5 to-gray-50">
-      <div className="mx-auto max-w-5xl px-6 py-8">
-        <UserDetailContent userId={id} />
-      </div>
+    <div className="mx-auto max-w-5xl">
+      <UserDetailContent userId={id} />
     </div>
   );
 }

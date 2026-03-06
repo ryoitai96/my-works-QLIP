@@ -58,13 +58,36 @@ export class SettingsService {
     });
   }
 
+  async createSite(
+    user: JwtPayload,
+    data: { name: string; siteType: string; address?: string },
+  ) {
+    if (!(STAFF_ROLES as readonly string[]).includes(user.role)) {
+      throw new ForbiddenException('拠点の追加はMW管理者・支援員のみ可能です');
+    }
+
+    if (!user.tenantId) {
+      throw new BadRequestException('テナント情報がありません');
+    }
+
+    return this.prisma.site.create({
+      data: {
+        tenantId: user.tenantId,
+        name: data.name,
+        siteType: data.siteType,
+        address: data.address ?? null,
+      },
+      select: { id: true, name: true, siteType: true, address: true, isActive: true },
+    });
+  }
+
   async updateSite(
     user: JwtPayload,
     siteId: string,
     data: { name?: string; address?: string; isActive?: boolean },
   ) {
-    if (user.role !== Role.SUPER_ADMIN) {
-      throw new ForbiddenException('拠点の編集はスーパーアドミンのみ可能です');
+    if (!(STAFF_ROLES as readonly string[]).includes(user.role)) {
+      throw new ForbiddenException('拠点の編集はMW管理者・支援員のみ可能です');
     }
 
     // Verify the site belongs to the user's tenant
@@ -102,6 +125,7 @@ export class SettingsService {
         svcMessage: true,
         svcThanks: true,
         svcFlowerOrder: true,
+        svcSos: true,
       },
     });
 
@@ -117,6 +141,7 @@ export class SettingsService {
       message: tenant.svcMessage,
       thanks: tenant.svcThanks,
       flower_order: tenant.svcFlowerOrder,
+      sos: tenant.svcSos,
     };
   }
 

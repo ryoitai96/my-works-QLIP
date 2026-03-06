@@ -158,6 +158,25 @@ export class DashboardService {
     };
   }
 
+  async getProductionProgress() {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
+    const todayFilter = { createdAt: { gte: todayStart, lt: tomorrowStart } };
+
+    const [pending, confirmed, inProduction, delivered, total] = await Promise.all([
+      this.prisma.flowerOrder.count({ where: { ...todayFilter, status: 'pending' } }),
+      this.prisma.flowerOrder.count({ where: { ...todayFilter, status: 'confirmed' } }),
+      this.prisma.flowerOrder.count({ where: { ...todayFilter, status: 'in_production' } }),
+      this.prisma.flowerOrder.count({ where: { ...todayFilter, status: 'delivered' } }),
+      this.prisma.flowerOrder.count({ where: todayFilter }),
+    ]);
+
+    return { total, pending, confirmed, inProduction, delivered };
+  }
+
   async getMemberDashboardStats(user: JwtPayload) {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -165,12 +184,19 @@ export class DashboardService {
     weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Sunday
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [production, thanks] = await Promise.all([
+    const [production, thanks, todayTasks, healthCheck] = await Promise.all([
       this.getProductionStats(todayStart, weekStart, monthStart),
       this.getReceivedThanksStats(user.userId, monthStart),
+      this.getMemberTodayTasks(user.userId, todayStart),
+      this.getMemberHealthCheck(user.userId, todayStart),
     ]);
 
-    return { production, thanks };
+    const badgesAndPoints = await this.getMemberBadgesAndPoints(
+      user.userId,
+      healthCheck.streakDays,
+    );
+
+    return { production, thanks, todayTasks, healthCheck, ...badgesAndPoints };
   }
 
   private async getProductionStats(
@@ -260,5 +286,121 @@ export class DashboardService {
     );
 
     return { todaySubmissions, todayParticipationRate, weeklyAvgParticipationRate };
+  }
+
+  private async getMemberTodayTasks(userId: string, todayStart: Date) {
+    const member = await this.prisma.member.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+    if (!member) return [];
+
+    return this.prisma.taskAssignment.findMany({
+      where: {
+        memberId: member.id,
+        assignedDate: todayStart,
+        status: { not: 'cancelled' },
+      },
+      select: {
+        id: true,
+        status: true,
+        microTask: {
+          select: { taskCode: true, name: true, standardDuration: true },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  private async getMemberHealthCheck(userId: string, todayStart: Date) {
+    const member = await this.prisma.member.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+    if (!member) return { submittedToday: false, streakDays: 0 };
+
+    const todayRecord = await this.prisma.vitalScore.findFirst({
+      where: { memberId: member.id, recordDate: todayStart },
+      select: { id: true },
+    });
+
+    // Calculate streak: count consecutive days with records going backwards from today
+    let streakDays = 0;
+    const checkDate = new Date(todayStart);
+
+    // If today is submitted, count it; otherwise start from yesterday
+    if (todayRecord) {
+      streakDays = 1;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    // Check up to 365 days back
+    for (let i = 0; i < 365; i++) {
+      const record = await this.prisma.vitalScore.findFirst({
+        where: { memberId: member.id, recordDate: checkDate },
+        select: { id: true },
+      });
+      if (!record) break;
+      streakDays++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    return { submittedToday: !!todayRecord, streakDays };
+  }
+
+  private async getMemberBadgesAndPoints(userId: string, streakDays: number) {
+    const member = await this.prisma.member.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!member) {
+      return {
+        points: 0,
+        badges: [],
+        badgeStats: { healthReports: 0, tasksCompleted: 0, thanksSent: 0, thanksReceived: 0, assessments: 0 },
+      };
+    }
+
+    const [healthReports, tasksCompleted, thanksSent, thanksReceived, assessments] =
+      await Promise.all([
+        this.prisma.vitalScore.count({ where: { memberId: member.id } }),
+        this.prisma.taskAssignment.count({
+          where: { memberId: member.id, status: 'completed' },
+        }),
+        this.prisma.thanksCard.count({ where: { fromUserId: userId } }),
+        this.prisma.thanksCard.count({ where: { toUserId: userId } }),
+        this.prisma.assessmentResult.count({
+          where: { memberId: member.id, status: 'completed' },
+        }),
+      ]);
+
+    const points =
+      healthReports * 10 +
+      tasksCompleted * 20 +
+      thanksSent * 15 +
+      thanksReceived * 15 +
+      assessments * 30;
+
+    const badges = [
+      { id: 'first_task', earned: tasksCompleted >= 1 },
+      { id: 'attendance_streak_7', earned: streakDays >= 7 },
+      { id: 'attendance_streak_30', earned: streakDays >= 30 },
+      { id: 'health_report_10', earned: healthReports >= 10 },
+      { id: 'health_report_50', earned: healthReports >= 50 },
+      { id: 'task_complete_10', earned: tasksCompleted >= 10 },
+      { id: 'task_complete_50', earned: tasksCompleted >= 50 },
+      { id: 'thanks_sent_5', earned: thanksSent >= 5 },
+      { id: 'thanks_received_10', earned: thanksReceived >= 10 },
+      { id: 'assessment_3', earned: assessments >= 3 },
+    ];
+
+    return {
+      points,
+      badges,
+      badgeStats: { healthReports, tasksCompleted, thanksSent, thanksReceived, assessments },
+    };
   }
 }

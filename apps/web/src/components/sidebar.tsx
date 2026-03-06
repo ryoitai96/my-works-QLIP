@@ -56,6 +56,25 @@ const mainNavItems: NavItem[] = [
     ),
   },
   {
+    href: '/sites',
+    label: '拠点管理',
+    icon: (
+      <svg
+        className="h-5 w-5 shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={1.5}
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3H21m-3.75 3H21"
+        />
+      </svg>
+    ),
+  },
+  {
     href: '/attendance',
     label: '勤怠管理',
     serviceKey: 'attendance',
@@ -131,6 +150,26 @@ const mainNavItems: NavItem[] = [
           strokeLinecap="round"
           strokeLinejoin="round"
           d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"
+        />
+      </svg>
+    ),
+  },
+  {
+    href: '/task-assign',
+    label: 'タスクアサイン',
+    serviceKey: 'micro_task',
+    icon: (
+      <svg
+        className="h-5 w-5 shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={1.5}
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
         />
       </svg>
     ),
@@ -362,6 +401,25 @@ const clientHRNavItems: NavItem[] = [
       </svg>
     ),
   },
+  {
+    href: '/sites',
+    label: '拠点一覧',
+    icon: (
+      <svg
+        className="h-5 w-5 shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={1.5}
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3H21m-3.75 3H21"
+        />
+      </svg>
+    ),
+  },
   orderNavItem,
   {
     href: '/messages',
@@ -509,15 +567,35 @@ export function Sidebar() {
     items.filter((item) => !item.serviceKey || isServiceEnabled(item.serviceKey));
 
   return (
-    <aside
-      className={`flex h-full shrink-0 flex-col border-r border-gray-200 bg-white transition-all duration-200 ${
-        isCollapsed ? 'w-16' : 'w-56'
-      }`}
-    >
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-gray-200 bg-white">
+      {/* Logo */}
+      <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
+        {/* My WORKS style signpost icon */}
+        <svg
+          className="h-9 w-9 shrink-0"
+          viewBox="0 0 40 40"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle cx="20" cy="6" r="4.5" fill="#D03A2F" />
+          <polygon points="10,13 28,13 30,17 10,17" fill="#E8922F" />
+          <polygon points="10,20 26,20 28,24 10,24" fill="#8AB535" />
+          <rect x="16" y="27" width="8" height="9" rx="1" fill="#2E7D4F" />
+        </svg>
+        <div className="min-w-0">
+          <p className="text-base font-bold leading-tight tracking-tight text-gray-900">
+            QLIP
+          </p>
+          <p className="text-[10px] font-medium leading-tight text-gray-400">
+            by My WORKS
+          </p>
+        </div>
+      </div>
+
       {/* Main Navigation */}
       <nav
         aria-label="メインナビゲーション"
-        className={`flex-1 py-4 ${isCollapsed ? 'px-2' : 'px-3'}`}
+        className={`min-h-0 flex-1 overflow-y-auto py-4 ${isCollapsed ? 'px-2' : 'px-3'}`}
       >
         {mounted && user?.role && isClientRole(user.role) ? (
           <ul className="space-y-0.5">
@@ -539,16 +617,27 @@ export function Sidebar() {
             <ul className="space-y-0.5">
               {filterByService(mainNavItems)
                 .filter(({ href }) => {
-                  // R03: 「従業員管理」を非表示（代わりに「マイページ」を使う）
+                  // R03: 「従業員管理」「拠点管理」を非表示
                   if (href === '/members' && user?.role === Role.MEMBER) {
+                    return false;
+                  }
+                  if (href === '/sites' && user?.role === Role.MEMBER) {
                     return false;
                   }
                   // R03 only: 制作管理
                   if (href === '/production' && user?.role !== Role.MEMBER) {
                     return false;
                   }
+                  // Staff only: タスクアサイン
+                  if (href === '/task-assign' && user?.role === Role.MEMBER) {
+                    return false;
+                  }
+                  // R03: メッセージは非表示
+                  if (href === '/messages' && user?.role === Role.MEMBER) {
+                    return false;
+                  }
                   if (user?.role === Role.JOB_COACH) {
-                    return !['/health-check', '/assessment', '/thanks'].includes(href);
+                    return !['/health-check', '/assessment', '/thanks', '/production'].includes(href);
                   }
                   return true;
                 })
@@ -562,6 +651,52 @@ export function Sidebar() {
                     isCollapsed={isCollapsed}
                   />
                 ))}
+              {mounted && user?.role === Role.MEMBER && isServiceEnabled('assessment') && (
+                <NavLink
+                  href="/growth"
+                  label="成長きろく"
+                  icon={
+                    <svg
+                      className="h-5 w-5 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"
+                      />
+                    </svg>
+                  }
+                  isActive={pathname === '/growth'}
+                  isCollapsed={isCollapsed}
+                />
+              )}
+              {mounted && user?.role === Role.MEMBER && isServiceEnabled('sos') && (
+                <NavLink
+                  href="/sos"
+                  label="SOS"
+                  icon={
+                    <svg
+                      className="h-5 w-5 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
+                      />
+                    </svg>
+                  }
+                  isActive={pathname === '/sos'}
+                  isCollapsed={isCollapsed}
+                />
+              )}
               {mounted && user?.role === Role.MEMBER && (
                 <NavLink
                   href="/members/me"
@@ -596,6 +731,57 @@ export function Sidebar() {
                   </p>
                 )}
                 <ul className="space-y-0.5">
+                  {isServiceEnabled('sos') && (
+                    <NavLink
+                      href="/sos"
+                      label="SOS通報管理"
+                      icon={
+                        <svg
+                          className="h-5 w-5 shrink-0"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
+                          />
+                        </svg>
+                      }
+                      isActive={pathname === '/sos' || pathname.startsWith('/sos/')}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                  {isServiceEnabled('thanks') && (
+                    <NavLink
+                      href="/qr-tokens"
+                      label="QRトークン"
+                      icon={
+                        <svg
+                          className="h-5 w-5 shrink-0"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M13.5 14.625v2.625m3.375-2.625v2.625M16.875 20.25h-3.375v-2.625h3.375v2.625zM20.25 14.625h-3.375v2.625h3.375v-2.625zm0 5.625h-3.375"
+                          />
+                        </svg>
+                      }
+                      isActive={pathname === '/qr-tokens' || pathname.startsWith('/qr-tokens/')}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
                   {adminNavItems.map(({ href, label, icon }) => (
                     <NavLink
                       key={href}

@@ -2,12 +2,14 @@ import { apiClient } from '../../lib/api-client';
 
 export interface ThanksCard {
   id: string;
-  fromUserId: string;
+  fromUserId: string | null;
   toUserId: string;
   content: string;
   category: string;
+  isQrThanks?: boolean;
+  senderDisplayName?: string | null;
   createdAt: string;
-  fromUser: { id: string; name: string };
+  fromUser: { id: string; name: string } | null;
 }
 
 export interface SendThanksRequest {

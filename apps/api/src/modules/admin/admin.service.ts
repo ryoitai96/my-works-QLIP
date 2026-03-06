@@ -73,6 +73,7 @@ export class AdminService {
         svcMessage: true,
         svcThanks: true,
         svcFlowerOrder: true,
+        svcSos: true,
       },
     });
 
@@ -88,6 +89,7 @@ export class AdminService {
       message: tenant.svcMessage,
       thanks: tenant.svcThanks,
       flower_order: tenant.svcFlowerOrder,
+      sos: tenant.svcSos,
     };
   }
 
@@ -105,6 +107,7 @@ export class AdminService {
     if (dto.message !== undefined) data.svcMessage = dto.message;
     if (dto.thanks !== undefined) data.svcThanks = dto.thanks;
     if (dto.flower_order !== undefined) data.svcFlowerOrder = dto.flower_order;
+    if (dto.sos !== undefined) data.svcSos = dto.sos;
 
     const updated = await this.prisma.tenant.update({
       where: { id },
@@ -117,6 +120,7 @@ export class AdminService {
         svcMessage: true,
         svcThanks: true,
         svcFlowerOrder: true,
+        svcSos: true,
       },
     });
 
@@ -128,6 +132,7 @@ export class AdminService {
       message: updated.svcMessage,
       thanks: updated.svcThanks,
       flower_order: updated.svcFlowerOrder,
+      sos: updated.svcSos,
     };
   }
 

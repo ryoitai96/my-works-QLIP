@@ -8,13 +8,9 @@ export const metadata: Metadata = {
 
 export default function HealthCheckPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#ffc000]/5 to-gray-50">
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">
-          今日の体調
-        </h1>
-        <HealthCheckPageContent />
-      </div>
+    <div className="mx-auto max-w-lg">
+      <h1 className="mb-6 text-2xl font-bold text-gray-900">今日の体調</h1>
+      <HealthCheckPageContent />
     </div>
   );
 }

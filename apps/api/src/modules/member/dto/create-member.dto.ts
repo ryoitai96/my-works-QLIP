@@ -8,6 +8,8 @@ export class CreateMemberDto {
   disabilityType?: string;
   disabilityGrade?: string;
   handbookType?: string;
+  handbookIssuedAt?: string;
+  handbookExpiresAt?: string;
   employmentType?: string;
   enrolledAt?: string;
   avatarId?: string;

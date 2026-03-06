@@ -17,6 +17,12 @@ export class DashboardController {
     return this.dashboardService.getStats(user);
   }
 
+  @Get('production-progress')
+  @Roles(...STAFF_ROLES, Role.CLIENT_HR)
+  async getProductionProgress() {
+    return this.dashboardService.getProductionProgress();
+  }
+
   @Get('member-stats')
   @Roles(...MEMBER_ROLES)
   async getMemberStats(@CurrentUser() user: JwtPayload) {
